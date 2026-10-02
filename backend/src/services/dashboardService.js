@@ -1,8 +1,8 @@
 import { meanMinutes, percentile, uptimePercent } from '../domain/metrics.js';
 import { dailyTrend } from '../domain/operations.js';
+import { correlationGroupsFor } from './operationsService.js';
 import { OPEN_STATUSES } from '../domain/incidentTransitions.js';
-import { presentIncident } from '../utils/presenters.js';
-import { usageFor } from '../utils/presenters.js';
+import { presentIncident, usageFor } from '../utils/presenters.js';
 import { HealthCheck, Incident, Organization, Service } from '../models/index.js';
 import { allowedTransitions } from '../domain/incidentTransitions.js';
 
@@ -83,5 +83,6 @@ export async function getDashboard(organizationId) {
       criticality: service.criticality,
     })),
     usage,
+    correlationGroups: await correlationGroupsFor(organizationId),
   };
 }

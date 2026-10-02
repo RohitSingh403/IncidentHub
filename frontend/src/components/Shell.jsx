@@ -15,6 +15,7 @@ const links = [
   ['/postmortems', 'Postmortems'],
   ['/status-pages', 'Status'],
   ['/operations', 'Operations'],
+  ['/graph', 'Graph'],
   ['/audit', 'Audit'],
   ['/settings', 'Settings'],
 ];
@@ -39,6 +40,7 @@ export function Shell({ children }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false);
   const notifications = useQuery({
     queryKey: ['notifications'],
     queryFn: () => api('/api/notifications'),
@@ -71,7 +73,7 @@ export function Shell({ children }) {
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[240px_1fr]">
-      <aside className="hidden border-r border-line bg-panel/80 md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-dvh overflow-y-auto border-r border-line bg-panel/80 md:flex md:flex-col">
         <div className="px-5 py-6">
           <p className="font-mono text-xs tracking-[0.18em] text-signal">INCIDENTHUB</p>
           <p className="mt-2 text-sm text-muted">{user?.organization?.name}</p>
@@ -92,14 +94,13 @@ export function Shell({ children }) {
 
       <div className="min-w-0">
         <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3 md:px-8">
-          <div className="flex items-center gap-4 overflow-x-auto md:hidden">
-            <span className="font-mono text-xs text-signal">IH</span>
-            {links.map(([to, label]) => (
-              <NavLink key={to} to={to} className="whitespace-nowrap text-sm text-muted">
-                {label}
-              </NavLink>
-            ))}
-          </div>
+          <button
+            className="rounded-md border border-line px-3 py-1.5 text-sm md:hidden"
+            onClick={() => setMenu((value) => !value)}
+            aria-expanded={menu}
+          >
+            Menu
+          </button>
           <p className="hidden text-sm text-muted md:block">{user?.name}</p>
           <div className="relative flex items-center gap-3">
             <button
@@ -148,6 +149,11 @@ export function Shell({ children }) {
             ) : null}
           </div>
         </header>
+        {menu ? (
+          <nav className="grid gap-1 border-b border-line px-3 py-3 md:hidden">
+            <NavItems onNavigate={() => setMenu(false)} />
+          </nav>
+        ) : null}
         <main className="px-4 py-6 md:px-8">{children}</main>
       </div>
     </div>

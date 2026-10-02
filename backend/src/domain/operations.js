@@ -70,6 +70,34 @@ export function correlateIncidents(incident, incidents, services) {
   });
 }
 
+export function buildCorrelationGroups(incidents, services) {
+  const parent = new Map(incidents.map((incident) => [String(incident._id || incident.id), String(incident._id || incident.id)]));
+  function find(id) {
+    let current = id;
+    while (parent.get(current) !== current) {
+      parent.set(current, parent.get(parent.get(current)));
+      current = parent.get(current);
+    }
+    return current;
+  }
+  function unite(left, right) {
+    const a = find(left);
+    const b = find(right);
+    if (a !== b) parent.set(a, b);
+  }
+  for (const incident of incidents) {
+    const related = correlateIncidents(incident, incidents, services);
+    for (const item of related) unite(String(incident._id || incident.id), item.id);
+  }
+  const groups = new Map();
+  for (const incident of incidents) {
+    const root = find(String(incident._id || incident.id));
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(incident);
+  }
+  return [...groups.values()].filter((group) => group.length > 1);
+}
+
 export function factualBrief(incident, events) {
   const timeline = (events || []).map((event) => event.message).filter(Boolean);
   return {

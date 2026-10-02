@@ -17,6 +17,7 @@ import { PublicStatusPage } from './pages/PublicStatusPage';
 import { StatusAdminPage } from './pages/StatusAdminPage';
 import { AuditPage } from './pages/AuditPage';
 import { OperationsPage } from './pages/OperationsPage';
+import { GraphPage } from './pages/GraphPage';
 
 function Protected({ children }) {
   const { token, loading } = useAuth();
@@ -46,6 +47,7 @@ export default function App() {
       <Route path="/postmortems/:id" element={<Protected><PostmortemDetailPage /></Protected>} />
       <Route path="/status-pages" element={<Protected><StatusAdminPage /></Protected>} />
       <Route path="/operations" element={<Protected><OperationsPage /></Protected>} />
+      <Route path="/graph" element={<Protected><GraphPage /></Protected>} />
       <Route path="/audit" element={<Protected><AuditPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

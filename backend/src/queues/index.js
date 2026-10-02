@@ -5,6 +5,7 @@ import { log } from '../utils/logger.js';
 
 let connection;
 const queues = new Map();
+const localEscalationTimers = new Map();
 
 export function getRedis() {
   const { redisUrl } = getEnv();
@@ -58,13 +59,25 @@ export async function enqueueMonitorCheck(monitorId) {
 
 export async function enqueueEscalation(incidentId, stepIndex, delayMs) {
   const escalation = getEscalationQueue();
+  const key = `esc:${incidentId}:${stepIndex}`;
   if (!escalation) {
+    const existing = localEscalationTimers.get(key);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      localEscalationTimers.delete(key);
+      import('../services/escalationService.js')
+        .then(({ advanceEscalation }) => advanceEscalation(incidentId))
+        .catch((error) => log('error', { message: 'In-process escalation failed', error: error.message }));
+    }, Math.max(0, delayMs));
+    if (typeof timer.unref === 'function') timer.unref();
+    localEscalationTimers.set(key, timer);
     log('info', {
-      message: 'Escalation delay was not queued because REDIS_URL is unset',
+      message: 'Escalation delay queued in this process because REDIS_URL is unset',
       incidentId: String(incidentId),
       stepIndex,
+      delayMs,
     });
-    return null;
+    return key;
   }
 
   const job = await escalation.add(
@@ -83,6 +96,10 @@ export async function enqueueEscalation(incidentId, stepIndex, delayMs) {
 }
 
 export async function cancelEscalation(jobId) {
+  if (jobId && localEscalationTimers.has(jobId)) {
+    clearTimeout(localEscalationTimers.get(jobId));
+    localEscalationTimers.delete(jobId);
+  }
   const escalation = getEscalationQueue();
   if (!escalation || !jobId) return;
   try {
@@ -101,6 +118,8 @@ export async function redisStatus() {
 }
 
 export async function closeQueues() {
+  for (const timer of localEscalationTimers.values()) clearTimeout(timer);
+  localEscalationTimers.clear();
   await Promise.all([...queues.values()].map((item) => item.close()));
   queues.clear();
   if (connection) {

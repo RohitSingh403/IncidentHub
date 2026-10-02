@@ -2,7 +2,7 @@
 
 IncidentHub is a multi-tenant reliability app. It checks HTTP services on a schedule, opens one incident when a failure threshold is reached, and keeps the timeline from detection through resolution.
 
-This repository covers the monitoring loop, on-call, escalation, public status pages, postmortems, audit, live updates, maintenance windows, SLOs, runbooks, dependencies, API keys, and outbound webhooks. Email, Slack, GitHub issues, Stripe checkout, and a model-written brief run only when their credentials are configured. Without those credentials the incident brief is taken from the timeline, email rows stay skipped, and checkout reports that billing is not connected.
+This repository covers the monitoring loop, on-call, escalation, public status pages, postmortems, audit, live updates, maintenance windows, SLOs, runbooks, a dependency graph, incident correlation, API keys, and outbound webhooks. Free, Pro, and Business limits are enforced. Pro and Business checkout stay idle until the matching Stripe price is configured, and a Stripe webhook then sets the organization plan. Email, Slack, GitHub issues, Stripe checkout, and a model-written brief run only when their credentials are configured. Without those credentials the incident brief is taken from the timeline, email rows stay skipped, and checkout reports that billing is not connected.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ Worker process ----------+--> HTTP checks --> incident rules
 
 The API and the monitoring worker are separate processes. A health check never runs inside an HTTP request handler. The worker leases a due monitor in MongoDB, runs the check, then releases the lease.
 
-When `REDIS_URL` is set, the worker enqueues due checks and delayed escalation steps on BullMQ. When it is unset, checks stay on the in-process loop and an escalation step still notifies immediately, but the wait until the next step is skipped. Acknowledging an incident removes the delayed job, and the step itself runs only if the incident is still `OPEN`.
+When `REDIS_URL` is set, the worker enqueues due checks and delayed escalation steps on BullMQ. When it is unset, checks stay on the in-process loop and the API keeps the escalation wait with a process timer. That timer is lost if the API restarts. Acknowledging an incident cancels the wait, and the step itself runs only if the incident is still `OPEN`.
 
 Every organization-owned record carries `organizationId`. Middleware loads the membership from the database on each request. The JWT is not treated as proof of the current role.
 

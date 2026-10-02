@@ -15,6 +15,14 @@ export const PLAN_LIMITS = {
     'apiKeys.max': 10,
     'webhooks.max': 10,
   },
+  business: {
+    'monitoring.services.max': 100,
+    'teams.max': 25,
+    'members.max': 200,
+    'statusPages.max': 20,
+    'apiKeys.max': 25,
+    'webhooks.max': 25,
+  },
 };
 
 export function limitFor(plan, key) {
