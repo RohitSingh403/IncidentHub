@@ -7,12 +7,14 @@ import { memberRouter, organizationRouter } from './organizationRoutes.js';
 import { teamRouter } from './teamRoutes.js';
 import { serviceRouter } from './serviceRoutes.js';
 import { dashboardRouter, incidentRouter, notificationRouter } from './incidentRoutes.js';
+import { publicStatusRouter, statusPageRouter } from './statusRoutes.js';
 
 export const apiRouter = Router();
 
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/demo', demoRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/public/status', publicStatusRouter);
 
 apiRouter.use(authMiddleware);
 apiRouter.use('/organization', organizationRouter);
@@ -22,3 +24,4 @@ apiRouter.use('/services', serviceRouter);
 apiRouter.use('/incidents', incidentRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/dashboard', dashboardRouter);
+apiRouter.use('/status-pages', statusPageRouter);

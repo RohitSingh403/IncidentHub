@@ -3,6 +3,7 @@ export const PLAN_LIMITS = {
     'monitoring.services.max': 3,
     'teams.max': 1,
     'members.max': 3,
+    'statusPages.max': 1,
   },
 };
 

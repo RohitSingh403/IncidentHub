@@ -10,6 +10,8 @@ import { IncidentsPage } from './pages/IncidentsPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PublicStatusPage } from './pages/PublicStatusPage';
+import { StatusAdminPage } from './pages/StatusAdminPage';
 
 function Protected({ children }) {
   const { token, loading } = useAuth();
@@ -25,6 +27,7 @@ export default function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/status/:slug" element={<PublicStatusPage />} />
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
       <Route path="/services" element={<Protected><ServicesPage /></Protected>} />
       <Route path="/services/:id" element={<Protected><ServiceDetailPage /></Protected>} />
@@ -32,6 +35,7 @@ export default function App() {
       <Route path="/incidents/:id" element={<Protected><IncidentDetailPage /></Protected>} />
       <Route path="/teams" element={<Protected><TeamsPage /></Protected>} />
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="/status-pages" element={<Protected><StatusAdminPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

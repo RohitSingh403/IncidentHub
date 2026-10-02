@@ -225,6 +225,64 @@ const notificationSchema = new Schema(
 );
 notificationSchema.index({ organizationId: 1, userId: 1, createdAt: -1 });
 
+const statusPageSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    description: { type: String, default: '', maxlength: 300 },
+    published: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
+statusPageSchema.index({ organizationId: 1 });
+
+const statusComponentSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    statusPageId: { type: Schema.Types.ObjectId, ref: 'StatusPage', required: true },
+    serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+  },
+  { timestamps: true },
+);
+statusComponentSchema.index({ statusPageId: 1, serviceId: 1 }, { unique: true });
+
+const statusIncidentSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    statusPageId: { type: Schema.Types.ObjectId, ref: 'StatusPage', required: true },
+    serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    incidentId: { type: Schema.Types.ObjectId, ref: 'Incident', default: null },
+    title: { type: String, required: true, maxlength: 140 },
+    publicStatus: {
+      type: String,
+      enum: ['investigating', 'identified', 'monitoring', 'resolved'],
+      default: 'investigating',
+    },
+    startedAt: { type: Date, required: true },
+    resolvedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+statusIncidentSchema.index({ statusPageId: 1, publicStatus: 1, startedAt: -1 });
+statusIncidentSchema.index({ incidentId: 1 });
+
+const statusUpdateSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    statusIncidentId: { type: Schema.Types.ObjectId, ref: 'StatusIncident', required: true },
+    publicStatus: {
+      type: String,
+      enum: ['investigating', 'identified', 'monitoring', 'resolved'],
+      required: true,
+    },
+    message: { type: String, required: true, maxlength: 500 },
+  },
+  { timestamps: true },
+);
+statusUpdateSchema.index({ statusIncidentId: 1, createdAt: 1 });
+
 export const User = model('User', userSchema);
 export const Organization = model('Organization', organizationSchema);
 export const Membership = model('Membership', membershipSchema);
@@ -237,3 +295,7 @@ export const Incident = model('Incident', incidentSchema);
 export const IncidentEvent = model('IncidentEvent', incidentEventSchema);
 export const IncidentComment = model('IncidentComment', incidentCommentSchema);
 export const Notification = model('Notification', notificationSchema);
+export const StatusPage = model('StatusPage', statusPageSchema);
+export const StatusComponent = model('StatusComponent', statusComponentSchema);
+export const StatusIncident = model('StatusIncident', statusIncidentSchema);
+export const StatusUpdate = model('StatusUpdate', statusUpdateSchema);

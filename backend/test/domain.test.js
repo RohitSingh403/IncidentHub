@@ -5,6 +5,7 @@ import { meanMinutes, percentile, uptimePercent } from '../src/domain/metrics.js
 import { applyCheckResult } from '../src/domain/monitorState.js';
 import { classifyResponse } from '../src/domain/classifyResponse.js';
 import { hasPermission } from '../src/domain/permissions.js';
+import { canChangePublicStatus, componentAppearance, pageSummary } from '../src/domain/statusPublic.js';
 
 const baseMonitor = {
   failureThreshold: 3,
@@ -102,6 +103,23 @@ describe('response classification', () => {
       monitor: { expectedStatus: 200, expectedJsonPath: 'status', expectedJsonValue: 'healthy' },
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('public status', () => {
+  it('keeps a separate state machine from the internal incident', () => {
+    expect(canChangePublicStatus('investigating', 'identified')).toBe(true);
+    expect(canChangePublicStatus('investigating', 'investigating')).toBe(false);
+    expect(canChangePublicStatus('resolved', 'monitoring')).toBe(false);
+    expect(componentAppearance('down', 'investigating')).toBe('investigating');
+    expect(componentAppearance('healthy', 'resolved')).toBe('operational');
+  });
+
+  it('rolls components up to a page summary', () => {
+    expect(pageSummary(['operational', 'operational'])).toBe('All systems operational');
+    expect(pageSummary(['operational', 'investigating'])).toBe('Partial outage');
+    expect(pageSummary(['outage'])).toBe('Major outage');
+    expect(pageSummary(['operational', 'degraded'])).toBe('Degraded performance');
   });
 });
 

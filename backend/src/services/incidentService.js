@@ -15,6 +15,7 @@ import {
   User,
 } from '../models/index.js';
 import { notifyIncident } from './notificationService.js';
+import { syncPublicIncident } from './statusPageService.js';
 
 const OPEN_FILTER = { $in: OPEN_STATUSES };
 
@@ -214,6 +215,7 @@ export async function createManualIncident(organizationId, actorId, input) {
 
   await addEvent(incident, 'incident.created', 'Incident created manually', actorId);
   await notifyIncident(incident, service, 'created');
+  await syncPublicIncident(service, incident, 'down');
   return getIncident(organizationId, incident._id);
 }
 
@@ -290,6 +292,7 @@ export async function applyTransition(incident, to, actorId, message) {
   if (to === 'RESOLVED') {
     const service = await Service.findById(incident.serviceId);
     await notifyIncident(incident, service, 'resolved');
+    if (service) await syncPublicIncident(service, incident, 'resolved');
   }
 
   return getIncident(incident.organizationId, incident._id);
@@ -351,6 +354,7 @@ export async function syncMonitorIncident(service, action, check) {
         { action, trigger },
       );
       await notifyIncident(incident, service, 'created');
+      await syncPublicIncident(service, incident, action === 'degraded' ? 'degraded' : 'down');
       return incident;
     } catch (error) {
       if (error.code !== 11000) throw error;
