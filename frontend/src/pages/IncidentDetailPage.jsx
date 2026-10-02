@@ -69,6 +69,9 @@ export function IncidentDetailPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <SeverityBadge severity={incident.severity} />
           <span className="font-mono text-sm">{incident.status}</span>
+          {Number.isInteger(incident.escalationStep) ? (
+            <span className="text-sm text-muted">Escalation step {incident.escalationStep + 1}</span>
+          ) : null}
           {incident.service ? <Link className="text-sm text-signal" to={`/services/${incident.service.id}`}>{incident.service.name}</Link> : null}
         </div>
         <p className="mt-3 max-w-3xl text-sm text-muted">{incident.description}</p>

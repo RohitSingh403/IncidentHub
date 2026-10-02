@@ -25,6 +25,45 @@ function titleFor(incident, kind) {
   return `${label} opened`;
 }
 
+export async function notifyUsers(incident, userIds, { title, body }) {
+  const uniqueIds = [...new Set(userIds.filter(Boolean).map(String))];
+  if (!uniqueIds.length) return;
+  try {
+    const users = await User.find({ _id: { $in: uniqueIds } }).select('email');
+    if (!users.length) return;
+    await Notification.insertMany(
+      users.map((user) => ({
+        organizationId: incident.organizationId,
+        userId: user._id,
+        incidentId: incident._id,
+        channel: 'in_app',
+        status: 'delivered',
+        title,
+        body,
+        sentAt: new Date(),
+      })),
+    );
+    await Notification.insertMany(
+      users.map((user) => ({
+        organizationId: incident.organizationId,
+        userId: user._id,
+        incidentId: incident._id,
+        channel: 'email',
+        status: 'skipped',
+        title,
+        body: `${body}. Email delivery is not configured.`,
+        error: 'SMTP is not configured',
+      })),
+    );
+  } catch (error) {
+    log('error', {
+      message: 'Failed to record notifications',
+      incidentId: String(incident._id),
+      error: error.message,
+    });
+  }
+}
+
 export async function notifyIncident(incident, service, kind) {
   try {
     const recipients = await recipientIds(incident, service);

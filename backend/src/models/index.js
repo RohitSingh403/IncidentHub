@@ -159,6 +159,10 @@ const incidentSchema = new Schema(
     acknowledgedAt: { type: Date, default: null },
     acknowledgedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     resolvedAt: { type: Date, default: null },
+    escalationPolicyId: { type: Schema.Types.ObjectId, ref: 'EscalationPolicy', default: null },
+    escalationStep: { type: Number, default: null },
+    escalationVersion: { type: Number, default: 0 },
+    escalationJobId: { type: String, default: null },
   },
   { timestamps: true },
 );
@@ -256,6 +260,57 @@ const postmortemActionSchema = new Schema(
 );
 postmortemActionSchema.index({ postmortemId: 1, createdAt: 1 });
 
+const onCallScheduleSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    teamId: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    timezone: { type: String, default: 'Asia/Kolkata' },
+    rotation: { type: String, enum: ['daily', 'weekly'], default: 'daily' },
+    startDate: { type: Date, required: true },
+    handoffMinutes: { type: Number, default: 0 },
+    memberIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  },
+  { timestamps: true },
+);
+onCallScheduleSchema.index({ organizationId: 1, teamId: 1 }, { unique: true });
+
+const scheduleOverrideSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    scheduleId: { type: Schema.Types.ObjectId, ref: 'OnCallSchedule', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    startsAt: { type: Date, required: true },
+    endsAt: { type: Date, required: true },
+  },
+  { timestamps: true },
+);
+scheduleOverrideSchema.index({ scheduleId: 1, startsAt: 1 });
+
+const escalationStepSchema = new Schema(
+  {
+    target: {
+      type: String,
+      enum: ['on_call', 'team_manager', 'incident_manager', 'user'],
+      required: true,
+    },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    waitMinutes: { type: Number, default: 5 },
+  },
+  { _id: false },
+);
+
+const escalationPolicySchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    teamId: { type: Schema.Types.ObjectId, ref: 'Team', default: null },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    steps: { type: [escalationStepSchema], required: true },
+  },
+  { timestamps: true },
+);
+escalationPolicySchema.index({ organizationId: 1, teamId: 1 }, { unique: true });
+
 export const User = model('User', userSchema);
 export const Organization = model('Organization', organizationSchema);
 export const Membership = model('Membership', membershipSchema);
@@ -270,3 +325,6 @@ export const IncidentComment = model('IncidentComment', incidentCommentSchema);
 export const Notification = model('Notification', notificationSchema);
 export const Postmortem = model('Postmortem', postmortemSchema);
 export const PostmortemAction = model('PostmortemAction', postmortemActionSchema);
+export const OnCallSchedule = model('OnCallSchedule', onCallScheduleSchema);
+export const ScheduleOverride = model('ScheduleOverride', scheduleOverrideSchema);
+export const EscalationPolicy = model('EscalationPolicy', escalationPolicySchema);

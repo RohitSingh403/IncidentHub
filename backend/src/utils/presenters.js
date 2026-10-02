@@ -129,6 +129,7 @@ export function presentIncident(incident, extras = {}) {
     detectedAt: incident.detectedAt,
     acknowledgedAt: incident.acknowledgedAt,
     resolvedAt: incident.resolvedAt,
+    escalationStep: incident.escalationStep,
     createdAt: incident.createdAt,
     updatedAt: incident.updatedAt,
     allowedTransitions: extras.allowedTransitions,

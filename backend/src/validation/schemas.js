@@ -11,7 +11,14 @@ export const passwordSchema = z
   .regex(/[A-Za-z]/, 'Password must include a letter')
   .regex(/[0-9]/, 'Password must include a number');
 
-const timezones = new Set(Intl.supportedValuesOf('timeZone'));
+const knownTimezone = z.string().refine((value) => {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}, 'Unknown timezone');
 
 export const registerSchema = z.object({
   body: z.object({
@@ -32,7 +39,7 @@ export const loginSchema = z.object({
 export const updateOrganizationSchema = z.object({
   body: z.object({
     name: z.string().trim().min(1).max(120),
-    timezone: z.string().refine((value) => timezones.has(value), 'Unknown timezone'),
+    timezone: knownTimezone,
     defaultSeverity: z.enum(SEVERITIES),
   }),
 });
@@ -197,6 +204,43 @@ export const notificationIdSchema = z.object({
   params: z.object({ id: objectId }),
 });
 
+const instant = z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date');
+
+export const createScheduleSchema = z.object({
+  body: z.object({
+    teamId: objectId,
+    name: z.string().trim().min(1).max(80),
+    timezone: knownTimezone,
+    rotation: z.enum(['daily', 'weekly']),
+    startDate: instant,
+    handoffMinutes: z.number().int().min(0).max(1439).optional().default(0),
+    memberIds: z.array(objectId).min(1).max(30),
+  }),
+});
+
+export const overrideSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    userId: objectId,
+    startsAt: instant,
+    endsAt: instant,
+  }),
+});
+
+const escalationStepInput = z.object({
+  target: z.enum(['on_call', 'team_manager', 'incident_manager', 'user']),
+  userId: objectId.nullable().optional(),
+  waitMinutes: z.number().int().min(0).max(1440),
+});
+
+export const createPolicySchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1).max(80),
+    teamId: objectId.nullable().optional(),
+    steps: z.array(escalationStepInput).min(1).max(5),
+  }),
+});
+
 const postmortemBody = z.object({
   summary: z.string().trim().max(5000).optional(),
   impact: z.string().trim().max(5000).optional(),
@@ -217,7 +261,7 @@ export const createActionSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1).max(200),
     ownerId: objectId.nullable().optional(),
-    dueAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date').nullable().optional(),
+    dueAt: instant.nullable().optional(),
   }),
 });
 
@@ -226,7 +270,7 @@ export const updateActionSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1).max(200).optional(),
     ownerId: objectId.nullable().optional(),
-    dueAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date').nullable().optional(),
+    dueAt: instant.nullable().optional(),
     status: z.enum(['pending', 'done']).optional(),
   }),
 });
