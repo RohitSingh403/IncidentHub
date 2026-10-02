@@ -225,6 +225,37 @@ const notificationSchema = new Schema(
 );
 notificationSchema.index({ organizationId: 1, userId: 1, createdAt: -1 });
 
+const postmortemSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    incidentId: { type: Schema.Types.ObjectId, ref: 'Incident', required: true },
+    summary: { type: String, default: '', maxlength: 5000 },
+    impact: { type: String, default: '', maxlength: 5000 },
+    timeline: { type: String, default: '', maxlength: 10000 },
+    rootCause: { type: String, default: '', maxlength: 5000 },
+    contributingFactors: { type: String, default: '', maxlength: 5000 },
+    resolution: { type: String, default: '', maxlength: 5000 },
+    lessonsLearned: { type: String, default: '', maxlength: 5000 },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  },
+  { timestamps: true },
+);
+postmortemSchema.index({ organizationId: 1, incidentId: 1 }, { unique: true });
+
+const postmortemActionSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    postmortemId: { type: Schema.Types.ObjectId, ref: 'Postmortem', required: true },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    dueAt: { type: Date, default: null },
+    status: { type: String, enum: ['pending', 'done'], default: 'pending' },
+    completedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+postmortemActionSchema.index({ postmortemId: 1, createdAt: 1 });
+
 export const User = model('User', userSchema);
 export const Organization = model('Organization', organizationSchema);
 export const Membership = model('Membership', membershipSchema);
@@ -237,3 +268,5 @@ export const Incident = model('Incident', incidentSchema);
 export const IncidentEvent = model('IncidentEvent', incidentEventSchema);
 export const IncidentComment = model('IncidentComment', incidentCommentSchema);
 export const Notification = model('Notification', notificationSchema);
+export const Postmortem = model('Postmortem', postmortemSchema);
+export const PostmortemAction = model('PostmortemAction', postmortemActionSchema);

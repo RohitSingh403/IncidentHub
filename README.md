@@ -2,7 +2,7 @@
 
 IncidentHub is a multi-tenant reliability app. It checks HTTP services on a schedule, opens one incident when a failure threshold is reached, and keeps the timeline from detection through resolution.
 
-This repository is the MVP: authentication, organizations, teams, services, monitoring, incidents, in-app notifications, and a dashboard. On-call schedules, escalation queues, status pages, and billing are later milestones.
+This repository covers the monitoring loop and postmortems. A postmortem can be written only after an incident is resolved, and it keeps action items with an owner and a done state. On-call, status pages, and billing are later milestones.
 
 ## Architecture
 

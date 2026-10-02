@@ -7,6 +7,9 @@ import { memberRouter, organizationRouter } from './organizationRoutes.js';
 import { teamRouter } from './teamRoutes.js';
 import { serviceRouter } from './serviceRoutes.js';
 import { dashboardRouter, incidentRouter, notificationRouter } from './incidentRoutes.js';
+import { mountIncidentPostmortems, postmortemRouter } from './postmortemRoutes.js';
+
+mountIncidentPostmortems(incidentRouter);
 
 export const apiRouter = Router();
 
@@ -22,3 +25,4 @@ apiRouter.use('/services', serviceRouter);
 apiRouter.use('/incidents', incidentRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/dashboard', dashboardRouter);
+apiRouter.use('/postmortems', postmortemRouter);

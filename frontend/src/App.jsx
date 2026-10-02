@@ -10,6 +10,7 @@ import { IncidentsPage } from './pages/IncidentsPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PostmortemDetailPage, PostmortemsPage } from './pages/PostmortemPage';
 
 function Protected({ children }) {
   const { token, loading } = useAuth();
@@ -32,6 +33,8 @@ export default function App() {
       <Route path="/incidents/:id" element={<Protected><IncidentDetailPage /></Protected>} />
       <Route path="/teams" element={<Protected><TeamsPage /></Protected>} />
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="/postmortems" element={<Protected><PostmortemsPage /></Protected>} />
+      <Route path="/postmortems/:id" element={<Protected><PostmortemDetailPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

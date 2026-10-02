@@ -17,6 +17,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'postmortem:read',
+    'postmortem:write',
   ],
   admin: [
     'org:read',
@@ -33,6 +35,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'postmortem:read',
+    'postmortem:write',
   ],
   incident_manager: [
     'org:read',
@@ -46,6 +50,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'postmortem:read',
+    'postmortem:write',
   ],
   engineer: [
     'org:read',
@@ -58,6 +64,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'postmortem:read',
+    'postmortem:write',
   ],
   viewer: [
     'org:read',
@@ -66,6 +74,7 @@ const ROLE_PERMISSIONS = {
     'service:read',
     'incident:read',
     'notification:read',
+    'postmortem:read',
   ],
 };
 
