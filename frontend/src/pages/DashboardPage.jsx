@@ -12,7 +12,13 @@ export function DashboardPage() {
     queryFn: () => api('/api/dashboard'),
     refetchInterval: 10000,
   });
+  const onCall = useQuery({
+    queryKey: ['oncall'],
+    queryFn: () => api('/api/on-call/schedules'),
+    refetchInterval: 10000,
+  });
   const data = dashboard.data?.data;
+  const currentOnCall = (onCall.data?.data || []).filter((schedule) => schedule.current?.name);
 
   if (dashboard.isLoading) return <p className="text-muted">Loading the board…</p>;
   if (dashboard.error) return <p className="text-danger">{dashboard.error.message}</p>;
@@ -30,6 +36,11 @@ export function DashboardPage() {
       <div>
         <h1 className="text-3xl font-semibold">{greeting(user?.name || 'there')}</h1>
         <p className="mt-1 text-sm text-muted">{user?.organization?.timezone} · checks refresh on their own</p>
+        {currentOnCall.length ? (
+          <p className="mt-2 text-sm">
+            On-call: {currentOnCall.map((schedule) => `${schedule.current.name} (${schedule.teamName || schedule.name})`).join(', ')}
+          </p>
+        ) : null}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map(([label, value]) => (

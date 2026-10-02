@@ -15,6 +15,7 @@ import {
   User,
 } from '../models/index.js';
 import { notifyIncident } from './notificationService.js';
+import { beginEscalation, stopEscalation } from './escalationService.js';
 
 const OPEN_FILTER = { $in: OPEN_STATUSES };
 
@@ -213,7 +214,7 @@ export async function createManualIncident(organizationId, actorId, input) {
   });
 
   await addEvent(incident, 'incident.created', 'Incident created manually', actorId);
-  await notifyIncident(incident, service, 'created');
+  await beginEscalation(incident, service);
   return getIncident(organizationId, incident._id);
 }
 
@@ -278,6 +279,7 @@ export async function applyTransition(incident, to, actorId, message) {
   }
   if (to === 'RESOLVED') incident.resolvedAt = new Date();
   await incident.save();
+  if (from === 'OPEN') await stopEscalation(incident);
 
   await addEvent(
     incident,
@@ -350,7 +352,7 @@ export async function syncMonitorIncident(service, action, check) {
         null,
         { action, trigger },
       );
-      await notifyIncident(incident, service, 'created');
+      await beginEscalation(incident, service);
       return incident;
     } catch (error) {
       if (error.code !== 11000) throw error;

@@ -17,6 +17,10 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'oncall:read',
+    'oncall:write',
+    'escalation:read',
+    'escalation:write',
   ],
   admin: [
     'org:read',
@@ -33,6 +37,10 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'oncall:read',
+    'oncall:write',
+    'escalation:read',
+    'escalation:write',
   ],
   incident_manager: [
     'org:read',
@@ -46,6 +54,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'oncall:read',
+    'escalation:read',
   ],
   engineer: [
     'org:read',
@@ -58,6 +68,8 @@ const ROLE_PERMISSIONS = {
     'incident:resolve',
     'incident:comment',
     'notification:read',
+    'oncall:read',
+    'escalation:read',
   ],
   viewer: [
     'org:read',
@@ -66,6 +78,8 @@ const ROLE_PERMISSIONS = {
     'service:read',
     'incident:read',
     'notification:read',
+    'oncall:read',
+    'escalation:read',
   ],
 };
 

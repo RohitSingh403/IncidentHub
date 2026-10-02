@@ -1,4 +1,5 @@
 import { AppError } from '../utils/AppError.js';
+import { enqueueMonitorCheck } from '../queues/index.js';
 import { applyCheckResult } from '../domain/monitorState.js';
 import { classifyResponse } from '../domain/classifyResponse.js';
 import { HealthCheck, Monitor, Service } from '../models/index.js';
@@ -110,6 +111,45 @@ export async function runMonitorNow(organizationId, serviceId) {
     { $set: { lockedUntil: null, nextCheckAt: new Date(Date.now() + intervalMs) } },
   );
   return result;
+}
+
+export async function claimAndCheck(monitorId) {
+  const now = new Date();
+  const monitor = await Monitor.findOneAndUpdate(
+    {
+      _id: monitorId,
+      enabled: true,
+      $or: [{ lockedUntil: null }, { lockedUntil: { $lte: now } }],
+    },
+    { $set: { lockedUntil: new Date(now.getTime() + 30_000) } },
+    { new: true },
+  );
+  if (!monitor) return false;
+
+  try {
+    const check = await executeHttpCheck(monitor);
+    await ingestCheck(monitor._id, check);
+  } finally {
+    const intervalMs = Math.max(15, monitor.intervalSeconds) * 1000;
+    await Monitor.updateOne(
+      { _id: monitor._id },
+      { $set: { lockedUntil: null, nextCheckAt: new Date(Date.now() + intervalMs) } },
+    );
+  }
+  return true;
+}
+
+export async function enqueueDueMonitors() {
+  const due = await Monitor.find({
+    enabled: true,
+    nextCheckAt: { $lte: new Date() },
+  })
+    .select('_id')
+    .limit(100);
+  for (const monitor of due) {
+    await enqueueMonitorCheck(monitor._id);
+  }
+  return due.length;
 }
 
 export async function processDueMonitor() {

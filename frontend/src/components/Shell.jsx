@@ -10,6 +10,8 @@ const links = [
   ['/incidents', 'Incidents'],
   ['/services', 'Services'],
   ['/teams', 'Teams'],
+  ['/on-call', 'On-call'],
+  ['/escalation', 'Escalation'],
   ['/settings', 'Settings'],
 ];
 
