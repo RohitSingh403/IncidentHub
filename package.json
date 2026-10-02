@@ -1,0 +1,23 @@
+{
+  "name": "incidenthub",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,worker,web -c blue,magenta,green \"npm run dev -w backend\" \"npm run worker -w backend\" \"npm run dev -w frontend\"",
+    "test": "npm run test -w backend",
+    "dev:api": "npm run dev -w backend",
+    "dev:worker": "npm run worker -w backend",
+    "dev:web": "npm run dev -w frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "mongodb-memory-server@10.4.3": true,
+    "fsevents@2.3.3": true
+  }
+}
