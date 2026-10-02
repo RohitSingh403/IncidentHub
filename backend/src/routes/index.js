@@ -10,6 +10,7 @@ import { dashboardRouter, incidentRouter, notificationRouter } from './incidentR
 import { onCallRouter } from './onCallRoutes.js';
 import { escalationRouter } from './escalationRoutes.js';
 import { mountIncidentPostmortems, postmortemRouter } from './postmortemRoutes.js';
+import { publicStatusRouter, statusPageRouter } from './statusRoutes.js';
 
 mountIncidentPostmortems(incidentRouter);
 
@@ -18,6 +19,7 @@ export const apiRouter = Router();
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/demo', demoRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/public/status', publicStatusRouter);
 
 apiRouter.use(authMiddleware);
 apiRouter.use('/organization', organizationRouter);
@@ -30,3 +32,4 @@ apiRouter.use('/dashboard', dashboardRouter);
 apiRouter.use('/on-call', onCallRouter);
 apiRouter.use('/escalation-policies', escalationRouter);
 apiRouter.use('/postmortems', postmortemRouter);
+apiRouter.use('/status-pages', statusPageRouter);

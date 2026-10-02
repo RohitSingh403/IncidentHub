@@ -1,6 +1,6 @@
 import { permissionsFor } from '../domain/permissions.js';
 import { limitFor } from '../domain/entitlements.js';
-import { Membership, Service, Team } from '../models/index.js';
+import { Membership, Service, StatusPage, Team } from '../models/index.js';
 
 export function presentUser(user, membership, organization, usage) {
   return {
@@ -22,16 +22,18 @@ export function presentUser(user, membership, organization, usage) {
 }
 
 export async function usageFor(organization) {
-  const [services, teams, members] = await Promise.all([
+  const [services, teams, members, statusPages] = await Promise.all([
     Service.countDocuments({ organizationId: organization._id }),
     Team.countDocuments({ organizationId: organization._id }),
     Membership.countDocuments({ organizationId: organization._id }),
+    StatusPage.countDocuments({ organizationId: organization._id }),
   ]);
 
   return {
     services: { used: services, max: limitFor(organization.plan, 'monitoring.services.max') },
     teams: { used: teams, max: limitFor(organization.plan, 'teams.max') },
     members: { used: members, max: limitFor(organization.plan, 'members.max') },
+    statusPages: { used: statusPages, max: limitFor(organization.plan, 'statusPages.max') },
   };
 }
 

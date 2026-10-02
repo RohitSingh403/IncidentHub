@@ -13,6 +13,8 @@ import { OnCallPage } from './pages/OnCallPage';
 import { EscalationPage } from './pages/EscalationPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PostmortemDetailPage, PostmortemsPage } from './pages/PostmortemPage';
+import { PublicStatusPage } from './pages/PublicStatusPage';
+import { StatusAdminPage } from './pages/StatusAdminPage';
 
 function Protected({ children }) {
   const { token, loading } = useAuth();
@@ -28,6 +30,7 @@ export default function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/status/:slug" element={<PublicStatusPage />} />
       <Route path="/dashboard" element={<Protected><DashboardPage /></Protected>} />
       <Route path="/services" element={<Protected><ServicesPage /></Protected>} />
       <Route path="/services/:id" element={<Protected><ServiceDetailPage /></Protected>} />
@@ -39,6 +42,7 @@ export default function App() {
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
       <Route path="/postmortems" element={<Protected><PostmortemsPage /></Protected>} />
       <Route path="/postmortems/:id" element={<Protected><PostmortemDetailPage /></Protected>} />
+      <Route path="/status-pages" element={<Protected><StatusAdminPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

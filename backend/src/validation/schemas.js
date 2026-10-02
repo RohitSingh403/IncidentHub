@@ -274,3 +274,30 @@ export const updateActionSchema = z.object({
     status: z.enum(['pending', 'done']).optional(),
   }),
 });
+
+export const createStatusPageSchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1).max(80),
+    description: z.string().trim().max(300).optional().default(''),
+    slug: z.string().trim().min(1).max(48).regex(/^[a-z0-9-]+$/i, 'Use letters, numbers, and hyphens').optional(),
+  }),
+});
+
+export const addStatusComponentSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({ serviceId: objectId }),
+});
+
+export const statusUpdateSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    publicStatus: z.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+    message: z.string().trim().min(1).max(500),
+  }),
+});
+
+export const publicSlugSchema = z.object({
+  params: z.object({
+    slug: z.string().trim().min(1).max(60),
+  }),
+});

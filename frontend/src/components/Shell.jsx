@@ -13,6 +13,7 @@ const links = [
   ['/on-call', 'On-call'],
   ['/escalation', 'Escalation'],
   ['/postmortems', 'Postmortems'],
+  ['/status-pages', 'Status'],
   ['/settings', 'Settings'],
 ];
 
@@ -65,6 +66,7 @@ export function Shell({ children }) {
             <p>Services {usage.services.used}/{usage.services.max}</p>
             <p>Teams {usage.teams.used}/{usage.teams.max}</p>
             <p>Members {usage.members.used}/{usage.members.max}</p>
+            {usage.statusPages ? <p>Status {usage.statusPages.used}/{usage.statusPages.max}</p> : null}
             <p className="pt-2 uppercase tracking-wide">{user.organization.plan} plan</p>
           </div>
         ) : null}
