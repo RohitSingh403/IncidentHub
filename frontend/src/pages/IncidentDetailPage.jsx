@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { TRANSITION_LABELS, can, formatWhen } from '../lib/format';
@@ -8,6 +8,7 @@ import { Banner, Button, Panel, SeverityBadge, inputClass } from '../components/
 
 export function IncidentDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [comment, setComment] = useState('');
@@ -18,6 +19,17 @@ export function IncidentDetailPage() {
     refetchInterval: 10000,
   });
   const incident = incidentQuery.data?.data;
+  const postmortemQuery = useQuery({
+    queryKey: ['incident-postmortem', id],
+    queryFn: () => api(`/api/incidents/${id}/postmortem`),
+    enabled: incident?.status === 'RESOLVED',
+    retry: false,
+  });
+  const createPostmortem = useMutation({
+    mutationFn: () => api(`/api/incidents/${id}/postmortem`, { method: 'POST' }),
+    onSuccess: (result) => navigate(`/postmortems/${result.data.id}`),
+    onError: (err) => setError(err.message),
+  });
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ['incident', id] });
@@ -57,6 +69,9 @@ export function IncidentDetailPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <SeverityBadge severity={incident.severity} />
           <span className="font-mono text-sm">{incident.status}</span>
+          {Number.isInteger(incident.escalationStep) ? (
+            <span className="text-sm text-muted">Escalation step {incident.escalationStep + 1}</span>
+          ) : null}
           {incident.service ? <Link className="text-sm text-signal" to={`/services/${incident.service.id}`}>{incident.service.name}</Link> : null}
         </div>
         <p className="mt-3 max-w-3xl text-sm text-muted">{incident.description}</p>
@@ -67,6 +82,12 @@ export function IncidentDetailPage() {
         </dl>
       </div>
       <Banner>{error}</Banner>
+      {incident.status === 'RESOLVED' && postmortemQuery.data?.data ? (
+        <Link className="text-sm text-signal" to={`/postmortems/${postmortemQuery.data.data.id}`}>Open postmortem</Link>
+      ) : null}
+      {incident.status === 'RESOLVED' && postmortemQuery.error?.status === 404 && can(user, 'postmortem:write') ? (
+        <Button disabled={createPostmortem.isPending} onClick={() => createPostmortem.mutate()}>Write postmortem</Button>
+      ) : null}
       {can(user, 'incident:transition') ? (
         <div className="flex flex-wrap gap-2">
           {(incident.allowedTransitions || []).map((status) => (

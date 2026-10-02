@@ -39,7 +39,7 @@ export function TeamsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Teams</h1>
-        <p className="mt-1 text-sm text-muted">The free plan includes one team. On-call rotations come after this loop is solid.</p>
+        <p className="mt-1 text-sm text-muted">The free plan includes one team. Set a manager here, then attach an on-call rotation.</p>
       </div>
       <Banner>{error}</Banner>
       {can(user, 'team:write') ? (

@@ -15,6 +15,7 @@ import {
   User,
 } from '../models/index.js';
 import { notifyIncident } from './notificationService.js';
+import { beginEscalation, stopEscalation } from './escalationService.js';
 import { syncPublicIncident } from './statusPageService.js';
 
 const OPEN_FILTER = { $in: OPEN_STATUSES };
@@ -214,7 +215,7 @@ export async function createManualIncident(organizationId, actorId, input) {
   });
 
   await addEvent(incident, 'incident.created', 'Incident created manually', actorId);
-  await notifyIncident(incident, service, 'created');
+  await beginEscalation(incident, service);
   await syncPublicIncident(service, incident, 'down');
   return getIncident(organizationId, incident._id);
 }
@@ -280,6 +281,7 @@ export async function applyTransition(incident, to, actorId, message) {
   }
   if (to === 'RESOLVED') incident.resolvedAt = new Date();
   await incident.save();
+  if (from === 'OPEN') await stopEscalation(incident);
 
   await addEvent(
     incident,
@@ -353,7 +355,7 @@ export async function syncMonitorIncident(service, action, check) {
         null,
         { action, trigger },
       );
-      await notifyIncident(incident, service, 'created');
+      await beginEscalation(incident, service);
       await syncPublicIncident(service, incident, action === 'degraded' ? 'degraded' : 'down');
       return incident;
     } catch (error) {

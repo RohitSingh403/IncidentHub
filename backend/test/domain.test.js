@@ -5,6 +5,8 @@ import { meanMinutes, percentile, uptimePercent } from '../src/domain/metrics.js
 import { applyCheckResult } from '../src/domain/monitorState.js';
 import { classifyResponse } from '../src/domain/classifyResponse.js';
 import { hasPermission } from '../src/domain/permissions.js';
+import { resolveOnCall } from '../src/domain/onCall.js';
+import { escalationDecision } from '../src/domain/escalation.js';
 import { canChangePublicStatus, componentAppearance, pageSummary } from '../src/domain/statusPublic.js';
 
 const baseMonitor = {
@@ -120,6 +122,87 @@ describe('public status', () => {
     expect(pageSummary(['operational', 'investigating'])).toBe('Partial outage');
     expect(pageSummary(['outage'])).toBe('Major outage');
     expect(pageSummary(['operational', 'degraded'])).toBe('Degraded performance');
+  });
+});
+
+describe('on-call rotation', () => {
+  const members = ['ada', 'grace', 'linus'];
+  const startDate = '2026-01-01T00:00:00.000Z';
+
+  it('picks the member for the current calendar day', () => {
+    const result = resolveOnCall({
+      memberIds: members,
+      startDate,
+      rotation: 'daily',
+      timeZone: 'UTC',
+      now: '2026-01-03T12:00:00.000Z',
+    });
+    expect(result).toMatchObject({ userId: 'linus', source: 'rotation', slot: 2 });
+  });
+
+  it('clamps a date before the rotation starts to the first member', () => {
+    const result = resolveOnCall({
+      memberIds: members,
+      startDate,
+      rotation: 'daily',
+      timeZone: 'UTC',
+      now: '2025-12-30T12:00:00.000Z',
+    });
+    expect(result.userId).toBe('ada');
+  });
+
+  it('uses weekly slots and lets an override win', () => {
+    const weekly = resolveOnCall({
+      memberIds: members,
+      startDate,
+      rotation: 'weekly',
+      timeZone: 'UTC',
+      now: '2026-01-09T12:00:00.000Z',
+    });
+    expect(weekly.userId).toBe('grace');
+
+    const override = resolveOnCall({
+      memberIds: members,
+      startDate,
+      rotation: 'daily',
+      timeZone: 'UTC',
+      now: '2026-01-03T12:00:00.000Z',
+      overrides: [{
+        userId: 'ops',
+        startsAt: '2026-01-03T00:00:00.000Z',
+        endsAt: '2026-01-04T00:00:00.000Z',
+      }],
+    });
+    expect(override).toMatchObject({ userId: 'ops', source: 'override' });
+  });
+
+  it('holds the previous shift until the handoff minute', () => {
+    const result = resolveOnCall({
+      memberIds: members,
+      startDate,
+      rotation: 'daily',
+      timeZone: 'UTC',
+      handoffMinutes: 9 * 60,
+      now: '2026-01-02T08:30:00.000Z',
+    });
+    expect(result.userId).toBe('ada');
+  });
+});
+
+describe('escalation decisions', () => {
+  it('advances only while the incident is open and steps remain', () => {
+    expect(escalationDecision({ status: 'OPEN', currentStep: 0, stepCount: 2 })).toEqual({
+      action: 'escalate',
+      stepIndex: 1,
+    });
+    expect(escalationDecision({ status: 'ACKNOWLEDGED', currentStep: 0, stepCount: 2 })).toEqual({
+      action: 'stop',
+      reason: 'acknowledged_or_closed',
+    });
+    expect(escalationDecision({ status: 'OPEN', currentStep: 1, stepCount: 2 })).toEqual({
+      action: 'stop',
+      reason: 'policy_complete',
+    });
   });
 });
 

@@ -9,7 +9,10 @@ import { ServiceDetailPage } from './pages/ServiceDetailPage';
 import { IncidentsPage } from './pages/IncidentsPage';
 import { IncidentDetailPage } from './pages/IncidentDetailPage';
 import { TeamsPage } from './pages/TeamsPage';
+import { OnCallPage } from './pages/OnCallPage';
+import { EscalationPage } from './pages/EscalationPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PostmortemDetailPage, PostmortemsPage } from './pages/PostmortemPage';
 import { PublicStatusPage } from './pages/PublicStatusPage';
 import { StatusAdminPage } from './pages/StatusAdminPage';
 
@@ -34,7 +37,11 @@ export default function App() {
       <Route path="/incidents" element={<Protected><IncidentsPage /></Protected>} />
       <Route path="/incidents/:id" element={<Protected><IncidentDetailPage /></Protected>} />
       <Route path="/teams" element={<Protected><TeamsPage /></Protected>} />
+      <Route path="/on-call" element={<Protected><OnCallPage /></Protected>} />
+      <Route path="/escalation" element={<Protected><EscalationPage /></Protected>} />
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="/postmortems" element={<Protected><PostmortemsPage /></Protected>} />
+      <Route path="/postmortems/:id" element={<Protected><PostmortemDetailPage /></Protected>} />
       <Route path="/status-pages" element={<Protected><StatusAdminPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
