@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "concurrently -n api,worker,web -c blue,magenta,green \"npm run dev -w backend\" \"npm run worker -w backend\" \"npm run dev -w frontend\"",
     "test": "npm run test -w backend",
+    "build": "npm run build -w frontend",
+    "start": "node backend/src/start.js",
     "dev:api": "npm run dev -w backend",
     "dev:worker": "npm run worker -w backend",
     "dev:web": "npm run dev -w frontend"
