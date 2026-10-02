@@ -12,6 +12,7 @@ import { TeamsPage } from './pages/TeamsPage';
 import { OnCallPage } from './pages/OnCallPage';
 import { EscalationPage } from './pages/EscalationPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PostmortemDetailPage, PostmortemsPage } from './pages/PostmortemPage';
 
 function Protected({ children }) {
   const { token, loading } = useAuth();
@@ -36,6 +37,8 @@ export default function App() {
       <Route path="/on-call" element={<Protected><OnCallPage /></Protected>} />
       <Route path="/escalation" element={<Protected><EscalationPage /></Protected>} />
       <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+      <Route path="/postmortems" element={<Protected><PostmortemsPage /></Protected>} />
+      <Route path="/postmortems/:id" element={<Protected><PostmortemDetailPage /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

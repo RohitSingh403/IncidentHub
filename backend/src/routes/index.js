@@ -9,6 +9,9 @@ import { serviceRouter } from './serviceRoutes.js';
 import { dashboardRouter, incidentRouter, notificationRouter } from './incidentRoutes.js';
 import { onCallRouter } from './onCallRoutes.js';
 import { escalationRouter } from './escalationRoutes.js';
+import { mountIncidentPostmortems, postmortemRouter } from './postmortemRoutes.js';
+
+mountIncidentPostmortems(incidentRouter);
 
 export const apiRouter = Router();
 
@@ -26,3 +29,4 @@ apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/dashboard', dashboardRouter);
 apiRouter.use('/on-call', onCallRouter);
 apiRouter.use('/escalation-policies', escalationRouter);
+apiRouter.use('/postmortems', postmortemRouter);

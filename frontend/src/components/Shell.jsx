@@ -12,6 +12,7 @@ const links = [
   ['/teams', 'Teams'],
   ['/on-call', 'On-call'],
   ['/escalation', 'Escalation'],
+  ['/postmortems', 'Postmortems'],
   ['/settings', 'Settings'],
 ];
 

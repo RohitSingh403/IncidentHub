@@ -240,3 +240,37 @@ export const createPolicySchema = z.object({
     steps: z.array(escalationStepInput).min(1).max(5),
   }),
 });
+
+const postmortemBody = z.object({
+  summary: z.string().trim().max(5000).optional(),
+  impact: z.string().trim().max(5000).optional(),
+  timeline: z.string().trim().max(10000).optional(),
+  rootCause: z.string().trim().max(5000).optional(),
+  contributingFactors: z.string().trim().max(5000).optional(),
+  resolution: z.string().trim().max(5000).optional(),
+  lessonsLearned: z.string().trim().max(5000).optional(),
+});
+
+export const updatePostmortemSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: postmortemBody,
+});
+
+export const createActionSchema = z.object({
+  params: z.object({ id: objectId }),
+  body: z.object({
+    title: z.string().trim().min(1).max(200),
+    ownerId: objectId.nullable().optional(),
+    dueAt: instant.nullable().optional(),
+  }),
+});
+
+export const updateActionSchema = z.object({
+  params: z.object({ id: objectId, actionId: objectId }),
+  body: z.object({
+    title: z.string().trim().min(1).max(200).optional(),
+    ownerId: objectId.nullable().optional(),
+    dueAt: instant.nullable().optional(),
+    status: z.enum(['pending', 'done']).optional(),
+  }),
+});
