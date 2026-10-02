@@ -2,7 +2,7 @@
 
 IncidentHub is a multi-tenant reliability app. It checks HTTP services on a schedule, opens one incident when a failure threshold is reached, and keeps the timeline from detection through resolution.
 
-This repository is the MVP: authentication, organizations, teams, services, monitoring, incidents, in-app notifications, and a dashboard. On-call schedules, escalation queues, status pages, and billing are later milestones.
+This repository covers the monitoring loop plus on-call schedules and escalation. Status pages, postmortems, and billing are later milestones.
 
 ## Architecture
 
@@ -11,10 +11,15 @@ React app  --REST-->  API (Express)
                          |
                          +--> MongoDB
                          |
+                         +--> Redis (optional, BullMQ)
+                         |
 Worker process ----------+--> HTTP checks --> incident rules
+                         +--> delayed escalation steps
 ```
 
-The API and the monitoring worker are separate processes. A health check never runs inside an HTTP request handler. The worker leases a due monitor in MongoDB, runs the check, then releases the lease. Redis and a job queue are the next step, when escalation needs durable delays.
+The API and the monitoring worker are separate processes. A health check never runs inside an HTTP request handler. The worker leases a due monitor in MongoDB, runs the check, then releases the lease.
+
+When `REDIS_URL` is set, the worker enqueues due checks and delayed escalation steps on BullMQ. When it is unset, checks stay on the in-process loop and an escalation step still notifies immediately, but the wait until the next step is skipped. Acknowledging an incident removes the delayed job, and the step itself runs only if the incident is still `OPEN`.
 
 Every organization-owned record carries `organizationId`. Middleware loads the membership from the database on each request. The JWT is not treated as proof of the current role.
 
@@ -64,6 +69,7 @@ See `backend/.env.example`.
 - `JWT_SECRET` (required, at least 32 characters, in production)
 - `JWT_EXPIRES_IN`
 - `CLIENT_ORIGIN`
+- `REDIS_URL` (optional, `redis://127.0.0.1:6379` when Redis is running)
 
 Email notifications are stored as skipped until SMTP is configured. In-app notifications are delivered immediately.
 
@@ -73,7 +79,7 @@ Email notifications are stored as skipped until SMTP is configured. In-app notif
 npm test
 ```
 
-Unit tests cover the state machine, severity, uptime, MTTA/MTTR, and thresholds. Integration tests cover registration, cross-organization access, the viewer role, one-incident idempotency, and the free-plan service limit.
+Unit tests cover the state machine, severity, uptime, MTTA/MTTR, thresholds, on-call rotation, and escalation decisions. Integration tests cover registration, cross-organization access, the viewer role, one-incident idempotency, the free-plan service limit, and escalation that stops after acknowledgement. Tests do not require Redis.
 
 ## API shape
 
