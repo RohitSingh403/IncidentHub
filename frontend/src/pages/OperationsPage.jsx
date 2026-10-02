@@ -9,6 +9,7 @@ export function OperationsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [createdKey, setCreatedKey] = useState('');
   const [webhookSecret, setWebhookSecret] = useState('');
   const writable = can(user, 'operations:write');
@@ -57,8 +58,12 @@ export function OperationsPage() {
   });
   const integrations = useMutation({
     mutationFn: (body) => api('/api/operations/integrations', { method: 'PATCH', body }),
-    onSuccess: () => { setError(''); refresh(); },
-    onError: (err) => setError(err.message),
+    onSuccess: (result) => {
+      setError('');
+      setNotice(result.data?.slack ? 'Saved. Slack is connected.' : 'Saved.');
+      refresh();
+    },
+    onError: (err) => { setNotice(''); setError(err.message); },
   });
   const checkout = useMutation({
     mutationFn: (plan) => api('/api/operations/checkout', { method: 'POST', body: { plan } }),
@@ -267,10 +272,11 @@ export function OperationsPage() {
             <input className={inputClass} name="slackWebhookUrl" placeholder="Slack incoming webhook URL" />
             <input className={inputClass} name="githubRepo" placeholder="owner/repository" defaultValue={data.integrations.githubRepo} />
             <input className={inputClass} name="githubToken" placeholder="GitHub token, stored for issue creation" />
-            <div className="flex gap-3">
-              <Button type="submit">Save integrations</Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={integrations.isPending}>{integrations.isPending ? 'Saving…' : 'Save integrations'}</Button>
               <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('pro')}>Upgrade to Pro</Button>
               <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('business')}>Upgrade to Business</Button>
+              {notice ? <p className="text-sm text-signal">{notice}</p> : null}
             </div>
           </form>
         ) : null}
