@@ -4,6 +4,16 @@ export const PLAN_LIMITS = {
     'teams.max': 1,
     'members.max': 3,
     'statusPages.max': 1,
+    'apiKeys.max': 1,
+    'webhooks.max': 1,
+  },
+  pro: {
+    'monitoring.services.max': 25,
+    'teams.max': 10,
+    'members.max': 50,
+    'statusPages.max': 5,
+    'apiKeys.max': 10,
+    'webhooks.max': 10,
   },
 };
 

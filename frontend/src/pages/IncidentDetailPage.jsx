@@ -25,6 +25,14 @@ export function IncidentDetailPage() {
     enabled: incident?.status === 'RESOLVED',
     retry: false,
   });
+  const relatedQuery = useQuery({
+    queryKey: ['incident-related', id],
+    queryFn: () => api(`/api/incidents/${id}/related`),
+  });
+  const brief = useMutation({
+    mutationFn: () => api(`/api/incidents/${id}/brief`, { method: 'POST' }),
+    onError: (err) => setError(err.message),
+  });
   const createPostmortem = useMutation({
     mutationFn: () => api(`/api/incidents/${id}/postmortem`, { method: 'POST' }),
     onSuccess: (result) => navigate(`/postmortems/${result.data.id}`),
@@ -82,6 +90,15 @@ export function IncidentDetailPage() {
         </dl>
       </div>
       <Banner>{error}</Banner>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="ghost" disabled={brief.isPending} onClick={() => brief.mutate()}>Write brief</Button>
+        {brief.data?.data ? <p className="text-sm">{brief.data.data.summary} <span className="font-mono text-xs text-muted">{brief.data.data.source}</span></p> : null}
+      </div>
+      {(relatedQuery.data?.data || []).length ? (
+        <p className="text-sm text-muted">
+          Related: {relatedQuery.data.data.map((item) => `${item.number || item.title} (${item.reason})`).join(', ')}
+        </p>
+      ) : null}
       {incident.status === 'RESOLVED' && postmortemQuery.data?.data ? (
         <Link className="text-sm text-signal" to={`/postmortems/${postmortemQuery.data.data.id}`}>Open postmortem</Link>
       ) : null}

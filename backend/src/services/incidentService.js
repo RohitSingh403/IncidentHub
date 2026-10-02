@@ -16,6 +16,7 @@ import {
 } from '../models/index.js';
 import { notifyIncident } from './notificationService.js';
 import { beginEscalation, stopEscalation } from './escalationService.js';
+import { fanoutIncident } from './operationsService.js';
 import { syncPublicIncident } from './statusPageService.js';
 
 const OPEN_FILTER = { $in: OPEN_STATUSES };
@@ -217,6 +218,7 @@ export async function createManualIncident(organizationId, actorId, input) {
   await addEvent(incident, 'incident.created', 'Incident created manually', actorId);
   await beginEscalation(incident, service);
   await syncPublicIncident(service, incident, 'down');
+  await fanoutIncident(incident, service, 'opened');
   return getIncident(organizationId, incident._id);
 }
 
@@ -295,6 +297,10 @@ export async function applyTransition(incident, to, actorId, message) {
     const service = await Service.findById(incident.serviceId);
     await notifyIncident(incident, service, 'resolved');
     if (service) await syncPublicIncident(service, incident, 'resolved');
+    await fanoutIncident(incident, service, 'resolved');
+  } else {
+    const service = await Service.findById(incident.serviceId);
+    await fanoutIncident(incident, service, 'updated');
   }
 
   return getIncident(incident.organizationId, incident._id);
@@ -357,6 +363,7 @@ export async function syncMonitorIncident(service, action, check) {
       );
       await beginEscalation(incident, service);
       await syncPublicIncident(service, incident, action === 'degraded' ? 'degraded' : 'down');
+      await fanoutIncident(incident, service, 'opened');
       return incident;
     } catch (error) {
       if (error.code !== 11000) throw error;
@@ -380,6 +387,7 @@ export async function syncMonitorIncident(service, action, check) {
       null,
     );
     await notifyIncident(incident, service, 'updated');
+    await fanoutIncident(incident, service, 'updated');
   }
 
   return incident;

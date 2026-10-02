@@ -5,6 +5,7 @@ import { log } from '../utils/logger.js';
 import { claimAndCheck, enqueueDueMonitors, processDueMonitor } from '../services/monitoringService.js';
 import { advanceEscalation } from '../services/escalationService.js';
 import { closeQueues, getRedis } from '../queues/index.js';
+import { deliverPendingWebhooks } from '../services/operationsService.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,6 +25,7 @@ async function pollLoop() {
   while (running) {
     try {
       const worked = await processDueMonitor();
+      await deliverPendingWebhooks();
       await sleep(worked ? 50 : 2000);
     } catch (error) {
       log('error', { message: 'Monitoring worker iteration failed', error: error.message });
@@ -54,6 +56,9 @@ async function startQueues() {
   scheduler = setInterval(() => {
     enqueueDueMonitors().catch((error) => {
       log('error', { message: 'Failed to enqueue due monitors', error: error.message });
+    });
+    deliverPendingWebhooks().catch((error) => {
+      log('error', { message: 'Failed to deliver webhooks', error: error.message });
     });
   }, 5000);
   await enqueueDueMonitors();

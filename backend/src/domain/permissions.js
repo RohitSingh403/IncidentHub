@@ -25,6 +25,9 @@ const ROLE_PERMISSIONS = {
     'postmortem:write',
     'status:read',
     'status:write',
+    'audit:read',
+    'operations:read',
+    'operations:write',
   ],
   admin: [
     'org:read',
@@ -49,6 +52,9 @@ const ROLE_PERMISSIONS = {
     'postmortem:write',
     'status:read',
     'status:write',
+    'audit:read',
+    'operations:read',
+    'operations:write',
   ],
   incident_manager: [
     'org:read',
@@ -68,6 +74,8 @@ const ROLE_PERMISSIONS = {
     'postmortem:write',
     'status:read',
     'status:write',
+    'audit:read',
+    'operations:read',
   ],
   engineer: [
     'org:read',
@@ -86,6 +94,7 @@ const ROLE_PERMISSIONS = {
     'postmortem:write',
     'status:read',
     'status:write',
+    'operations:read',
   ],
   viewer: [
     'org:read',
@@ -98,6 +107,7 @@ const ROLE_PERMISSIONS = {
     'escalation:read',
     'postmortem:read',
     'status:read',
+    'operations:read',
   ],
 };
 

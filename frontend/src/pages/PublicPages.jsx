@@ -60,9 +60,9 @@ export function LandingPage() {
 
 export function PricingPage() {
   const plans = [
-    ['Free', 'Current plan', ['3 services', '1 team', '3 members', '30-day check history']],
-    ['Pro', 'Not for sale yet', ['25 services', 'Email alerts', 'Webhooks']],
-    ['Business', 'Not for sale yet', ['100 services', 'Longer history', 'Advanced analytics']],
+    ['Free', 'Available now', ['3 services', '1 team', '3 members', '1 API key', '1 webhook']],
+    ['Pro', 'Checkout when Stripe is configured', ['25 services', '10 teams', '50 members', '10 API keys', '10 webhooks']],
+    ['Business', 'Not offered yet', ['Higher limits after Pro']],
   ];
   return (
     <div>
@@ -70,7 +70,7 @@ export function PricingPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-4xl font-semibold">Pricing</h1>
         <p className="mt-3 max-w-2xl text-muted">
-          The free plan is the product you can run today. Paid plans are limits we will enforce later, not a checkout.
+          Free limits apply today. Pro limits apply after a Stripe subscription is connected on the server.
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {plans.map(([name, note, items]) => (

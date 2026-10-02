@@ -5,6 +5,7 @@ import { meanMinutes, percentile, uptimePercent } from '../src/domain/metrics.js
 import { applyCheckResult } from '../src/domain/monitorState.js';
 import { classifyResponse } from '../src/domain/classifyResponse.js';
 import { hasPermission } from '../src/domain/permissions.js';
+import { correlateIncidents, errorBudget, factualBrief, windowCovers } from '../src/domain/operations.js';
 import { resolveOnCall } from '../src/domain/onCall.js';
 import { escalationDecision } from '../src/domain/escalation.js';
 import { canChangePublicStatus, componentAppearance, pageSummary } from '../src/domain/statusPublic.js';
@@ -203,6 +204,40 @@ describe('escalation decisions', () => {
       action: 'stop',
       reason: 'policy_complete',
     });
+  });
+});
+
+describe('operations rules', () => {
+  it('suppresses incidents only inside a maintenance window', () => {
+    const windows = [{ startsAt: '2026-04-01T00:00:00.000Z', endsAt: '2026-04-01T02:00:00.000Z' }];
+    expect(windowCovers(windows, '2026-04-01T01:00:00.000Z')).toBe(true);
+    expect(windowCovers(windows, '2026-04-01T02:00:00.000Z')).toBe(false);
+  });
+
+  it('computes remaining error budget from the target', () => {
+    const budget = errorBudget({ successful: 999, total: 1000, targetPercent: 99.9 });
+    expect(budget.actualPercent).toBeCloseTo(99.9);
+    expect(budget.remainingPercent).toBeCloseTo(0);
+  });
+
+  it('links incidents by dependency or a short overlap', () => {
+    const incident = { _id: 'a', serviceId: 's1', detectedAt: '2026-04-01T00:00:00.000Z' };
+    const related = correlateIncidents(incident, [
+      { _id: 'b', serviceId: 's2', detectedAt: '2026-04-01T00:05:00.000Z', title: 'Upstream', status: 'OPEN', number: 2 },
+      { _id: 'c', serviceId: 's3', detectedAt: '2026-04-02T00:00:00.000Z', title: 'Later', status: 'OPEN', number: 3 },
+    ], [{ _id: 's1', dependsOn: ['s2'] }]);
+    expect(related.map((item) => item.id)).toEqual(['b']);
+    expect(related[0].reason).toBe('dependency');
+  });
+
+  it('writes a brief from the timeline when no model is configured', () => {
+    const brief = factualBrief(
+      { title: 'Checkout failed', severity: 'SEV-2', status: 'RESOLVED' },
+      [{ message: 'Incident created manually' }],
+    );
+    expect(brief.source).toBe('timeline');
+    expect(brief.summary).toContain('Checkout failed');
+    expect(brief.timeline).toContain('Incident created manually');
   });
 });
 

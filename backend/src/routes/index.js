@@ -11,6 +11,7 @@ import { onCallRouter } from './onCallRoutes.js';
 import { escalationRouter } from './escalationRoutes.js';
 import { mountIncidentPostmortems, postmortemRouter } from './postmortemRoutes.js';
 import { publicStatusRouter, statusPageRouter } from './statusRoutes.js';
+import { auditRouter, operationsRouter } from './operationsRoutes.js';
 
 mountIncidentPostmortems(incidentRouter);
 
@@ -33,3 +34,5 @@ apiRouter.use('/on-call', onCallRouter);
 apiRouter.use('/escalation-policies', escalationRouter);
 apiRouter.use('/postmortems', postmortemRouter);
 apiRouter.use('/status-pages', statusPageRouter);
+apiRouter.use('/operations', operationsRouter);
+apiRouter.use('/audit', auditRouter);

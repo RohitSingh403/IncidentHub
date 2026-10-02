@@ -2,7 +2,7 @@
 
 IncidentHub is a multi-tenant reliability app. It checks HTTP services on a schedule, opens one incident when a failure threshold is reached, and keeps the timeline from detection through resolution.
 
-This repository covers the monitoring loop, on-call schedules, escalation, public status pages, and postmortems. The public page uses its own state (investigating, identified, monitoring, resolved) and does not expose the internal incident status. A postmortem can be written only after an incident is resolved. Billing is a later milestone.
+This repository covers the monitoring loop, on-call, escalation, public status pages, postmortems, audit, live updates, maintenance windows, SLOs, runbooks, dependencies, API keys, and outbound webhooks. Email, Slack, GitHub issues, Stripe checkout, and a model-written brief run only when their credentials are configured. Without those credentials the incident brief is taken from the timeline, email rows stay skipped, and checkout reports that billing is not connected.
 
 ## Architecture
 

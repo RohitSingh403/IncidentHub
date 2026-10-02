@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -14,6 +14,8 @@ const links = [
   ['/escalation', 'Escalation'],
   ['/postmortems', 'Postmortems'],
   ['/status-pages', 'Status'],
+  ['/operations', 'Operations'],
+  ['/audit', 'Audit'],
   ['/settings', 'Settings'],
 ];
 
@@ -33,7 +35,7 @@ function NavItems({ onNavigate }) {
 }
 
 export function Shell({ children }) {
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -45,6 +47,22 @@ export function Shell({ children }) {
   const items = notifications.data?.data?.items || [];
   const unread = notifications.data?.data?.unreadCount || 0;
   const usage = user?.organization?.usage;
+
+  useEffect(() => {
+    if (!token) return undefined;
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const socket = new WebSocket(`${protocol}://${window.location.host}/api/live?token=${encodeURIComponent(token)}`);
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'incident' || message.type === 'activity') {
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        queryClient.invalidateQueries({ queryKey: ['incidents'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['audit'] });
+      }
+    };
+    return () => socket.close();
+  }, [token, queryClient]);
 
   async function markAll() {
     await api('/api/notifications/read-all', { method: 'POST' });

@@ -4,6 +4,7 @@ import { applyCheckResult } from '../domain/monitorState.js';
 import { classifyResponse } from '../domain/classifyResponse.js';
 import { HealthCheck, Monitor, Service } from '../models/index.js';
 import { resolveMonitorIncident, syncMonitorIncident } from './incidentService.js';
+import { maintenanceCovers } from './operationsService.js';
 
 export async function executeHttpCheck(monitor) {
   const started = Date.now();
@@ -91,7 +92,8 @@ export async function ingestCheck(monitorId, check) {
   service.status = decision.serviceStatus;
   await service.save();
 
-  if (decision.action === 'down' || decision.action === 'degraded') {
+  if ((decision.action === 'down' || decision.action === 'degraded')
+    && !(await maintenanceCovers(service.organizationId, service._id))) {
     await syncMonitorIncident(service, decision.action, check);
   } else if (decision.action === 'healthy') {
     await resolveMonitorIncident(service, check);

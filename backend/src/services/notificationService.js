@@ -1,4 +1,5 @@
 import { log } from '../utils/logger.js';
+import { sendConfiguredEmail } from './mailer.js';
 import { Membership, Notification, TeamMember, User } from '../models/index.js';
 import { incidentNumber } from '../utils/presenters.js';
 
@@ -43,18 +44,20 @@ export async function notifyUsers(incident, userIds, { title, body }) {
         sentAt: new Date(),
       })),
     );
-    await Notification.insertMany(
-      users.map((user) => ({
+    await Notification.insertMany(await Promise.all(users.map(async (user) => {
+      const email = await sendConfiguredEmail({ to: user.email, subject: title, text: body });
+      return {
         organizationId: incident.organizationId,
         userId: user._id,
         incidentId: incident._id,
         channel: 'email',
-        status: 'skipped',
+        status: email.status === 'sent' ? 'delivered' : email.status === 'failed' ? 'failed' : 'skipped',
         title,
-        body: `${body}. Email delivery is not configured.`,
-        error: 'SMTP is not configured',
-      })),
-    );
+        body: email.status === 'skipped' ? `${body}. Email delivery is not configured.` : body,
+        error: email.error,
+        sentAt: email.status === 'sent' ? new Date() : null,
+      };
+    })));
   } catch (error) {
     log('error', {
       message: 'Failed to record notifications',
@@ -86,18 +89,20 @@ export async function notifyIncident(incident, service, kind) {
       })),
     );
 
-    await Notification.insertMany(
-      users.map((user) => ({
+    await Notification.insertMany(await Promise.all(users.map(async (user) => {
+      const email = await sendConfiguredEmail({ to: user.email, subject: title, text: body });
+      return {
         organizationId: incident.organizationId,
         userId: user._id,
         incidentId: incident._id,
         channel: 'email',
-        status: 'skipped',
+        status: email.status === 'sent' ? 'delivered' : email.status === 'failed' ? 'failed' : 'skipped',
         title,
-        body: `${body}. Email delivery is not configured.`,
-        error: 'SMTP is not configured',
-      })),
-    );
+        body: email.status === 'skipped' ? `${body}. Email delivery is not configured.` : body,
+        error: email.error,
+        sentAt: email.status === 'sent' ? new Date() : null,
+      };
+    })));
   } catch (error) {
     log('error', {
       message: 'Failed to record notifications',

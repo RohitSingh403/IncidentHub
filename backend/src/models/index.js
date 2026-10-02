@@ -26,6 +26,9 @@ const organizationSchema = new Schema(
     defaultSeverity: { type: String, enum: SEVERITIES, default: 'SEV-3' },
     plan: { type: String, default: 'free' },
     incidentCounter: { type: Number, default: 0 },
+    slackWebhookUrl: { type: String, default: '', select: false },
+    githubRepo: { type: String, default: '' },
+    githubToken: { type: String, default: '', select: false },
   },
   { timestamps: true },
 );
@@ -88,6 +91,7 @@ const serviceSchema = new Schema(
       enum: ['unknown', 'healthy', 'degraded', 'down'],
       default: 'unknown',
     },
+    dependsOn: [{ type: Schema.Types.ObjectId, ref: 'Service' }],
   },
   { timestamps: true },
 );
@@ -390,3 +394,97 @@ export const StatusPage = model('StatusPage', statusPageSchema);
 export const StatusComponent = model('StatusComponent', statusComponentSchema);
 export const StatusIncident = model('StatusIncident', statusIncidentSchema);
 export const StatusUpdate = model('StatusUpdate', statusUpdateSchema);
+
+const auditEventSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    actorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    action: { type: String, required: true, maxlength: 80 },
+    targetType: { type: String, default: '', maxlength: 40 },
+    targetId: { type: Schema.Types.ObjectId, default: null },
+    message: { type: String, required: true, maxlength: 500 },
+  },
+  { timestamps: true },
+);
+auditEventSchema.index({ organizationId: 1, createdAt: -1 });
+
+const maintenanceWindowSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    startsAt: { type: Date, required: true },
+    endsAt: { type: Date, required: true },
+    reason: { type: String, default: '', maxlength: 200 },
+  },
+  { timestamps: true },
+);
+maintenanceWindowSchema.index({ organizationId: 1, serviceId: 1, startsAt: 1 });
+
+const sloSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    targetPercent: { type: Number, required: true },
+    windowDays: { type: Number, default: 30 },
+  },
+  { timestamps: true },
+);
+sloSchema.index({ organizationId: 1, serviceId: 1 }, { unique: true });
+
+const runbookSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    body: { type: String, default: '', maxlength: 10000 },
+  },
+  { timestamps: true },
+);
+runbookSchema.index({ organizationId: 1, serviceId: 1 }, { unique: true });
+
+const apiKeySchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    prefix: { type: String, required: true },
+    hash: { type: String, required: true, unique: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    lastUsedAt: { type: Date, default: null },
+    revokedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+apiKeySchema.index({ organizationId: 1, createdAt: -1 });
+
+const webhookEndpointSchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    url: { type: String, required: true, maxlength: 500 },
+    secret: { type: String, required: true },
+    events: [{ type: String }],
+  },
+  { timestamps: true },
+);
+webhookEndpointSchema.index({ organizationId: 1 });
+
+const webhookDeliverySchema = new Schema(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true },
+    endpointId: { type: Schema.Types.ObjectId, ref: 'WebhookEndpoint', required: true },
+    event: { type: String, required: true },
+    payload: { type: Schema.Types.Mixed, required: true },
+    status: { type: String, enum: ['pending', 'delivered', 'failed'], default: 'pending' },
+    attempts: { type: Number, default: 0 },
+    error: { type: String, default: null },
+  },
+  { timestamps: true },
+);
+webhookDeliverySchema.index({ status: 1, createdAt: 1 });
+
+export const AuditEvent = model('AuditEvent', auditEventSchema);
+export const MaintenanceWindow = model('MaintenanceWindow', maintenanceWindowSchema);
+export const Slo = model('Slo', sloSchema);
+export const Runbook = model('Runbook', runbookSchema);
+export const ApiKey = model('ApiKey', apiKeySchema);
+export const WebhookEndpoint = model('WebhookEndpoint', webhookEndpointSchema);
+export const WebhookDelivery = model('WebhookDelivery', webhookDeliverySchema);

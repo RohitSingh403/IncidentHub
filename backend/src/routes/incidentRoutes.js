@@ -16,6 +16,7 @@ import * as incidentService from '../services/incidentService.js';
 import * as notificationService from '../services/notificationService.js';
 import { presentNotification } from '../utils/presenters.js';
 import { getDashboard } from '../services/dashboardService.js';
+import { incidentBrief, relatedIncidents } from '../services/operationsService.js';
 import { AppError } from '../utils/AppError.js';
 
 export const incidentRouter = Router();
@@ -41,6 +42,24 @@ incidentRouter.post(
       req.validated.body,
     );
     sendOk(res, incident, 'Incident created', 201);
+  }),
+);
+
+incidentRouter.get(
+  '/:id/related',
+  requirePermission('incident:read'),
+  validate(incidentIdSchema),
+  asyncHandler(async (req, res) => {
+    sendOk(res, await relatedIncidents(req.organizationId, req.validated.params.id), 'Related incidents');
+  }),
+);
+
+incidentRouter.post(
+  '/:id/brief',
+  requirePermission('incident:read'),
+  validate(incidentIdSchema),
+  asyncHandler(async (req, res) => {
+    sendOk(res, await incidentBrief(req.organizationId, req.validated.params.id), 'Incident brief');
   }),
 );
 

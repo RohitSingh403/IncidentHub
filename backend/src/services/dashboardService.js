@@ -1,4 +1,5 @@
-import { meanMinutes, uptimePercent } from '../domain/metrics.js';
+import { meanMinutes, percentile, uptimePercent } from '../domain/metrics.js';
+import { dailyTrend } from '../domain/operations.js';
 import { OPEN_STATUSES } from '../domain/incidentTransitions.js';
 import { presentIncident } from '../utils/presenters.js';
 import { usageFor } from '../utils/presenters.js';
@@ -10,7 +11,7 @@ export async function getDashboard(organizationId) {
   const historySince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const organization = await Organization.findById(organizationId);
 
-  const [services, openIncidents, checks, acknowledged, resolved, usage] = await Promise.all([
+  const [services, openIncidents, checks, acknowledged, resolved, usage, recentIncidents, latencyChecks, failedChecks] = await Promise.all([
     Service.find({ organizationId }).sort({ name: 1 }),
     Incident.find({ organizationId, status: { $in: OPEN_STATUSES } }).sort({ createdAt: -1 }).limit(8),
     HealthCheck.aggregate([
@@ -35,6 +36,9 @@ export async function getDashboard(organizationId) {
       createdAt: { $gte: historySince },
     }).select('detectedAt resolvedAt'),
     usageFor(organization),
+    Incident.find({ organizationId, createdAt: { $gte: historySince } }).select('detectedAt serviceId createdAt'),
+    HealthCheck.find({ organizationId, checkedAt: { $gte: since }, responseTimeMs: { $ne: null } }).select('responseTimeMs'),
+    HealthCheck.find({ organizationId, success: false, checkedAt: { $gte: historySince } }).select('serviceId checkedAt'),
   ]);
 
   const checkSummary = checks[0] || { total: 0, successful: 0 };
@@ -53,6 +57,18 @@ export async function getDashboard(organizationId) {
     mttrMinutes: meanMinutes(
       resolved.map((incident) => ({ start: incident.detectedAt, end: incident.resolvedAt })),
     ),
+    mttdMinutes: meanMinutes(recentIncidents.flatMap((incident) => {
+      const detected = new Date(incident.detectedAt).getTime();
+      const earlier = failedChecks
+        .filter((check) => String(check.serviceId) === String(incident.serviceId))
+        .map((check) => new Date(check.checkedAt).getTime())
+        .filter((time) => time <= detected && detected - time <= 60 * 60 * 1000);
+      if (!earlier.length) return [];
+      return [{ start: new Date(Math.min(...earlier)), end: incident.detectedAt }];
+    })),
+    latencyP95Ms: percentile(latencyChecks.map((check) => check.responseTimeMs), 95),
+    latencyP99Ms: percentile(latencyChecks.map((check) => check.responseTimeMs), 99),
+    incidentTrend: dailyTrend(recentIncidents.map((incident) => incident.createdAt), 14),
     activeIncidents: openIncidents.map((incident) =>
       presentIncident(incident, {
         service: names.get(String(incident.serviceId)),

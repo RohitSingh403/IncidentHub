@@ -20,5 +20,12 @@ export function getEnv() {
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '12h',
     clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
     redisUrl: process.env.REDIS_URL || '',
+    smtpUrl: process.env.SMTP_URL || '',
+    smtpFrom: process.env.SMTP_FROM || '',
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+    stripePricePro: process.env.STRIPE_PRICE_PRO || '',
+    aiApiKey: process.env.AI_API_KEY || '',
+    aiBaseUrl: process.env.AI_BASE_URL || 'https://api.openai.com/v1',
+    aiModel: process.env.AI_MODEL || 'gpt-4o-mini',
   };
 }

@@ -29,6 +29,9 @@ export function DashboardPage() {
     ['Uptime, 24h', formatPercent(data.uptimePercent)],
     ['MTTR, 30d', formatMinutes(data.mttrMinutes)],
     ['MTTA, 30d', formatMinutes(data.mttaMinutes)],
+    ['MTTD, 30d', formatMinutes(data.mttdMinutes)],
+    ['p95 latency', data.latencyP95Ms == null ? '—' : `${Math.round(data.latencyP95Ms)}ms`],
+    ['p99 latency', data.latencyP99Ms == null ? '—' : `${Math.round(data.latencyP99Ms)}ms`],
   ];
 
   return (
@@ -42,7 +45,7 @@ export function DashboardPage() {
           </p>
         ) : null}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(([label, value]) => (
           <Panel key={label} className="px-4 py-4">
             <p className="text-sm text-muted">{label}</p>
@@ -50,6 +53,14 @@ export function DashboardPage() {
           </Panel>
         ))}
       </div>
+      {data.incidentTrend?.length ? (
+        <Panel className="px-4 py-4">
+          <h2 className="font-medium">Incidents, 14 days</h2>
+          <p className="mt-3 font-mono text-sm text-muted">
+            {data.incidentTrend.map((day) => `${day.date.slice(5)} ${day.count}`).join('  ·  ')}
+          </p>
+        </Panel>
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <Panel>
           <div className="border-b border-line px-4 py-3">
