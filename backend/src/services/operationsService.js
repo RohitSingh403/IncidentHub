@@ -2,7 +2,8 @@ import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { AppError } from '../utils/AppError.js';
 import { limitFor } from '../domain/entitlements.js';
-import { errorBudget, factualBrief, windowCovers, correlateIncidents } from '../domain/operations.js';
+import { errorBudget, factualBrief, windowCovers, correlateIncidents, buildCorrelationGroups } from '../domain/operations.js';
+import { OPEN_STATUSES } from '../domain/incidentTransitions.js';
 import { incidentNumber } from '../utils/presenters.js';
 import { publish } from '../live/hub.js';
 import { getEnv } from '../config/env.js';
@@ -109,12 +110,76 @@ export async function fanoutIncident(incident, service, kind) {
         payload,
       })));
     }
+    if (kind === 'opened') await noteCorrelation(incident);
     if (kind === 'opened' || kind === 'resolved') {
       await notifySlackAndGithub(incident, service, message);
     }
   } catch (error) {
     log('error', { message: 'Incident fan-out failed', error: error.message });
   }
+}
+
+async function noteCorrelation(incident) {
+  const [services, openIncidents] = await Promise.all([
+    Service.find({ organizationId: incident.organizationId }).select('dependsOn'),
+    Incident.find({ organizationId: incident.organizationId, status: { $in: OPEN_STATUSES } }),
+  ]);
+  const related = correlateIncidents(incident, openIncidents, services);
+  if (!related.length) return;
+  const summary = related
+    .map((item) => `${incidentNumber(item.number)} (${item.reason})`)
+    .join(', ');
+  await IncidentEvent.create({
+    organizationId: incident.organizationId,
+    incidentId: incident._id,
+    type: 'incident.correlated',
+    message: `Correlated with ${summary}`,
+    metadata: { related },
+  });
+}
+
+export async function correlationGroupsFor(organizationId) {
+  const [services, openIncidents] = await Promise.all([
+    Service.find({ organizationId }).select('dependsOn'),
+    Incident.find({ organizationId, status: { $in: OPEN_STATUSES } }).sort({ detectedAt: -1 }),
+  ]);
+  return buildCorrelationGroups(openIncidents, services).map((group) => ({
+    incidents: group.map((item) => ({
+      id: String(item._id),
+      number: incidentNumber(item.number),
+      title: item.title,
+      status: item.status,
+    })),
+  }));
+}
+
+export async function dependencyGraph(organizationId) {
+  const [services, openIncidents] = await Promise.all([
+    Service.find({ organizationId }).sort({ name: 1 }),
+    Incident.find({ organizationId, status: { $in: OPEN_STATUSES } }).select('serviceId number title'),
+  ]);
+  const openByService = new Map();
+  for (const incident of openIncidents) {
+    if (!openByService.has(String(incident.serviceId))) {
+      openByService.set(String(incident.serviceId), {
+        id: String(incident._id),
+        number: incidentNumber(incident.number),
+        title: incident.title,
+      });
+    }
+  }
+  return {
+    nodes: services.map((service) => ({
+      id: String(service._id),
+      name: service.name,
+      status: service.status,
+      incident: openByService.get(String(service._id)) || null,
+    })),
+    edges: services.flatMap((service) => (service.dependsOn || []).map((dependency) => ({
+      from: String(service._id),
+      to: String(dependency),
+    }))),
+  };
 }
 
 async function notifySlackAndGithub(incident, service, message) {
@@ -461,21 +526,41 @@ export async function saveIntegrations(organizationId, actorId, input) {
   return { slack: Boolean(organization.slackWebhookUrl), githubRepo: organization.githubRepo };
 }
 
-export async function startCheckout(organizationId) {
+export async function startCheckout(organizationId, plan = 'pro') {
   const env = getEnv();
-  if (!env.stripeSecretKey || !env.stripePricePro) {
+  const selected = plan === 'business' ? 'business' : 'pro';
+  const price = selected === 'business' ? env.stripePriceBusiness : env.stripePricePro;
+  if (!env.stripeSecretKey || !price) {
     throw new AppError('BILLING_UNAVAILABLE', 'Billing is not connected on this server', 503);
   }
   const { default: Stripe } = await import('stripe');
   const stripe = new Stripe(env.stripeSecretKey);
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
-    line_items: [{ price: env.stripePricePro, quantity: 1 }],
-    success_url: `${env.clientOrigin}/settings?billing=success`,
-    cancel_url: `${env.clientOrigin}/settings?billing=cancel`,
-    metadata: { organizationId: String(organizationId) },
+    line_items: [{ price, quantity: 1 }],
+    success_url: `${env.clientOrigin}/operations?billing=success`,
+    cancel_url: `${env.clientOrigin}/operations?billing=cancel`,
+    metadata: { organizationId: String(organizationId), plan: selected },
   });
   return { url: session.url };
+}
+
+export async function applyBillingEvent(rawBody, signature) {
+  const env = getEnv();
+  if (!env.stripeSecretKey || !env.stripeWebhookSecret) {
+    throw new AppError('BILLING_UNAVAILABLE', 'Billing webhook is not connected', 503);
+  }
+  const { default: Stripe } = await import('stripe');
+  const stripe = new Stripe(env.stripeSecretKey);
+  const event = stripe.webhooks.constructEvent(rawBody, signature, env.stripeWebhookSecret);
+  if (event.type === 'checkout.session.completed') {
+    const organizationId = event.data.object.metadata?.organizationId;
+    const plan = event.data.object.metadata?.plan === 'business' ? 'business' : 'pro';
+    if (organizationId) {
+      await Organization.updateOne({ _id: organizationId }, { $set: { plan } });
+    }
+  }
+  return { received: true };
 }
 
 export async function incidentBrief(organizationId, incidentId) {

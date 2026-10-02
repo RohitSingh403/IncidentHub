@@ -157,10 +157,23 @@ operationsRouter.patch(
   }),
 );
 
+operationsRouter.get(
+  '/graph',
+  requirePermission('operations:read'),
+  asyncHandler(async (req, res) => {
+    sendOk(res, await operations.dependencyGraph(req.organizationId), 'Dependency graph');
+  }),
+);
+
 operationsRouter.post(
   '/checkout',
   requirePermission('operations:write'),
+  validate(z.object({
+    body: z.object({
+      plan: z.enum(['pro', 'business']).optional().default('pro'),
+    }),
+  })),
   asyncHandler(async (req, res) => {
-    sendOk(res, await operations.startCheckout(req.organizationId), 'Checkout');
+    sendOk(res, await operations.startCheckout(req.organizationId, req.validated.body.plan), 'Checkout');
   }),
 );

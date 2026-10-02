@@ -61,7 +61,7 @@ export function OperationsPage() {
     onError: (err) => setError(err.message),
   });
   const checkout = useMutation({
-    mutationFn: () => api('/api/operations/checkout', { method: 'POST' }),
+    mutationFn: (plan) => api('/api/operations/checkout', { method: 'POST', body: { plan } }),
     onSuccess: (result) => { window.location.assign(result.data.url); },
     onError: (err) => setError(err.message),
   });
@@ -87,7 +87,7 @@ export function OperationsPage() {
         <h2 className="font-medium">Maintenance</h2>
         <p className="text-sm text-muted">Checks still run. A window stops a new incident from opening.</p>
         {writable ? (
-          <form className="grid gap-3 md:grid-cols-4" onSubmit={(event) => {
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             maintenance.mutate({
@@ -98,12 +98,23 @@ export function OperationsPage() {
             });
             event.currentTarget.reset();
           }}>
-            <select className={inputClass} name="serviceId" required>
-              {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
-            </select>
-            <input className={inputClass} name="startsAt" type="datetime-local" required />
-            <input className={inputClass} name="endsAt" type="datetime-local" required />
-            <Button type="submit">Schedule</Button>
+            <Field label="Service">
+              <select className={inputClass} name="serviceId" required>
+                {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Starts">
+              <input className={inputClass} name="startsAt" type="datetime-local" required />
+            </Field>
+            <Field label="Ends">
+              <input className={inputClass} name="endsAt" type="datetime-local" required />
+            </Field>
+            <Field label="Reason">
+              <input className={inputClass} name="reason" placeholder="Deploy window" />
+            </Field>
+            <div className="flex items-end">
+              <Button type="submit" className="w-full">Schedule</Button>
+            </div>
           </form>
         ) : null}
         <ul className="text-sm">
@@ -118,7 +129,7 @@ export function OperationsPage() {
       <Panel className="space-y-3 px-4 py-4">
         <h2 className="font-medium">SLOs and error budget</h2>
         {writable ? (
-          <form className="grid gap-3 md:grid-cols-4" onSubmit={(event) => {
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             slo.mutate({
@@ -127,12 +138,20 @@ export function OperationsPage() {
               windowDays: Number(form.get('windowDays')),
             });
           }}>
-            <select className={inputClass} name="serviceId" required>
-              {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
-            </select>
-            <input className={inputClass} name="targetPercent" type="number" min="90" max="100" step="0.1" defaultValue="99.9" />
-            <input className={inputClass} name="windowDays" type="number" min="1" max="90" defaultValue="30" />
-            <Button type="submit">Save SLO</Button>
+            <Field label="Service">
+              <select className={inputClass} name="serviceId" required>
+                {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Target percent">
+              <input className={inputClass} name="targetPercent" type="number" min="90" max="100" step="0.1" defaultValue="99.9" />
+            </Field>
+            <Field label="Window, days">
+              <input className={inputClass} name="windowDays" type="number" min="1" max="90" defaultValue="30" />
+            </Field>
+            <div className="flex items-end">
+              <Button type="submit" className="w-full">Save SLO</Button>
+            </div>
           </form>
         ) : null}
         <ul className="text-sm">
@@ -169,7 +188,7 @@ export function OperationsPage() {
           ))}
         </ul>
         {writable ? (
-          <form className="grid gap-3 md:grid-cols-3" onSubmit={(event) => {
+          <form className="grid items-end gap-3 md:grid-cols-[1fr_1fr_auto]" onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             const dependsOn = form.getAll('dependsOn').filter(Boolean);
@@ -181,7 +200,7 @@ export function OperationsPage() {
               </select>
             </Field>
             <Field label="Depends on">
-              <select className={inputClass} name="dependsOn" multiple>
+              <select className={`${inputClass} min-h-24`} name="dependsOn" multiple>
                 {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
               </select>
             </Field>
@@ -250,7 +269,8 @@ export function OperationsPage() {
             <input className={inputClass} name="githubToken" placeholder="GitHub token, stored for issue creation" />
             <div className="flex gap-3">
               <Button type="submit">Save integrations</Button>
-              <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate()}>Upgrade to Pro</Button>
+              <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('pro')}>Upgrade to Pro</Button>
+              <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('business')}>Upgrade to Business</Button>
             </div>
           </form>
         ) : null}

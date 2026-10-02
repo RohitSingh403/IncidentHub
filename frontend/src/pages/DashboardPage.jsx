@@ -53,12 +53,45 @@ export function DashboardPage() {
           </Panel>
         ))}
       </div>
+      {(data.correlationGroups || []).length ? (
+        <Panel>
+          <div className="border-b border-line px-4 py-3">
+            <h2 className="font-medium">Correlated incidents</h2>
+          </div>
+          <ul>
+            {data.correlationGroups.map((group) => (
+              <li key={group.incidents.map((item) => item.id).join('-')} className="border-b border-line px-4 py-3 last:border-0">
+                {group.incidents.map((item, index) => (
+                  <span key={item.id}>
+                    {index ? ' · ' : ''}
+                    <Link className="text-signal" to={`/incidents/${item.id}`}>{item.number}</Link>
+                    <span className="text-muted"> {item.title}</span>
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
       {data.incidentTrend?.length ? (
         <Panel className="px-4 py-4">
           <h2 className="font-medium">Incidents, 14 days</h2>
-          <p className="mt-3 font-mono text-sm text-muted">
-            {data.incidentTrend.map((day) => `${day.date.slice(5)} ${day.count}`).join('  ·  ')}
-          </p>
+          <div className="mt-4 flex h-28 items-end gap-1">
+            {data.incidentTrend.map((day) => {
+              const peak = Math.max(...data.incidentTrend.map((item) => item.count), 1);
+              return (
+                <div key={day.date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <span className="font-mono text-[10px] text-muted">{day.count || ''}</span>
+                  <div
+                    className="w-full rounded-sm bg-signal/80"
+                    style={{ height: `${Math.max(4, (day.count / peak) * 64)}px` }}
+                    title={`${day.date}: ${day.count}`}
+                  />
+                  <span className="font-mono text-[10px] text-muted">{day.date.slice(8)}</span>
+                </div>
+              );
+            })}
+          </div>
         </Panel>
       ) : null}
       <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">

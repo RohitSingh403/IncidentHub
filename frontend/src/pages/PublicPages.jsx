@@ -62,7 +62,7 @@ export function PricingPage() {
   const plans = [
     ['Free', 'Available now', ['3 services', '1 team', '3 members', '1 API key', '1 webhook']],
     ['Pro', 'Checkout when Stripe is configured', ['25 services', '10 teams', '50 members', '10 API keys', '10 webhooks']],
-    ['Business', 'Not offered yet', ['Higher limits after Pro']],
+    ['Business', 'Checkout when Stripe is configured', ['100 services', '25 teams', '200 members', '25 API keys', '25 webhooks']],
   ];
   return (
     <div>
@@ -70,7 +70,7 @@ export function PricingPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-4xl font-semibold">Pricing</h1>
         <p className="mt-3 max-w-2xl text-muted">
-          Free limits apply today. Pro limits apply after a Stripe subscription is connected on the server.
+          Free limits apply today. Pro and Business limits apply after the matching Stripe price is connected on the server.
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {plans.map(([name, note, items]) => (

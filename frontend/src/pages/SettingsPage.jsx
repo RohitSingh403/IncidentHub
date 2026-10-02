@@ -48,7 +48,7 @@ export function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Settings</h1>
-        <p className="mt-1 text-sm text-muted">Organization profile, members, and the free-plan limits.</p>
+        <p className="mt-1 text-sm text-muted">Organization profile, members, and plan limits.</p>
       </div>
       <Banner>{error}</Banner>
       <Panel className="grid max-w-xl gap-3 p-4">

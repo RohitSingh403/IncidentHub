@@ -5,7 +5,7 @@ import { meanMinutes, percentile, uptimePercent } from '../src/domain/metrics.js
 import { applyCheckResult } from '../src/domain/monitorState.js';
 import { classifyResponse } from '../src/domain/classifyResponse.js';
 import { hasPermission } from '../src/domain/permissions.js';
-import { correlateIncidents, errorBudget, factualBrief, windowCovers } from '../src/domain/operations.js';
+import { buildCorrelationGroups, correlateIncidents, errorBudget, factualBrief, windowCovers } from '../src/domain/operations.js';
 import { resolveOnCall } from '../src/domain/onCall.js';
 import { escalationDecision } from '../src/domain/escalation.js';
 import { canChangePublicStatus, componentAppearance, pageSummary } from '../src/domain/statusPublic.js';
@@ -228,6 +228,16 @@ describe('operations rules', () => {
     ], [{ _id: 's1', dependsOn: ['s2'] }]);
     expect(related.map((item) => item.id)).toEqual(['b']);
     expect(related[0].reason).toBe('dependency');
+  });
+
+  it('groups incidents that share a dependency', () => {
+    const groups = buildCorrelationGroups([
+      { _id: 'a', serviceId: 's1', detectedAt: '2026-04-01T00:00:00.000Z', title: 'A', status: 'OPEN', number: 1 },
+      { _id: 'b', serviceId: 's2', detectedAt: '2026-04-01T00:04:00.000Z', title: 'B', status: 'OPEN', number: 2 },
+      { _id: 'c', serviceId: 's3', detectedAt: '2026-04-03T00:00:00.000Z', title: 'C', status: 'OPEN', number: 3 },
+    ], [{ _id: 's1', dependsOn: ['s2'] }]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].map((item) => item._id).sort()).toEqual(['a', 'b']);
   });
 
   it('writes a brief from the timeline when no model is configured', () => {
