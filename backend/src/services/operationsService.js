@@ -508,7 +508,7 @@ export async function deleteWebhook(organizationId, actorId, id) {
 
 export async function saveIntegrations(organizationId, actorId, input) {
   const organization = await Organization.findById(organizationId).select('+slackWebhookUrl +githubToken');
-  if (input.slackWebhookUrl !== undefined) organization.slackWebhookUrl = input.slackWebhookUrl || '';
+  if (input.slackWebhookUrl) organization.slackWebhookUrl = input.slackWebhookUrl;
   if (input.githubRepo !== undefined) organization.githubRepo = input.githubRepo || '';
   if (input.githubToken) organization.githubToken = input.githubToken;
   if (organization.githubRepo && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(organization.githubRepo)) {

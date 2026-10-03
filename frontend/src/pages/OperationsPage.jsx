@@ -267,15 +267,21 @@ export function OperationsPage() {
           <form className="grid gap-3" onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
+            const slackWebhookUrl = String(form.get('slackWebhookUrl') || '').trim();
+            const githubToken = String(form.get('githubToken') || '').trim();
             integrations.mutate({
-              slackWebhookUrl: form.get('slackWebhookUrl'),
               githubRepo: form.get('githubRepo'),
-              githubToken: form.get('githubToken') || undefined,
+              ...(slackWebhookUrl ? { slackWebhookUrl } : {}),
+              ...(githubToken ? { githubToken } : {}),
             });
           }}>
-            <input className={inputClass} name="slackWebhookUrl" placeholder="Slack incoming webhook URL" />
+            <p className="text-sm text-signal">
+              {data.integrations.slack ? 'Slack webhook is saved.' : 'Slack is not connected.'}{' '}
+              {data.integrations.github ? 'GitHub token is saved.' : 'GitHub token is not saved.'}
+            </p>
+            <input className={inputClass} name="slackWebhookUrl" placeholder={data.integrations.slack ? 'Webhook saved. Paste a new URL only to replace it.' : 'Slack incoming webhook URL'} />
             <input className={inputClass} name="githubRepo" placeholder="owner/repository" defaultValue={data.integrations.githubRepo} />
-            <input className={inputClass} name="githubToken" placeholder="GitHub token, stored for issue creation" />
+            <input className={inputClass} name="githubToken" placeholder={data.integrations.github ? 'Token saved. Paste a new token only to replace it.' : 'GitHub token, stored for issue creation'} />
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={integrations.isPending}>{integrations.isPending ? 'Saving…' : 'Save integrations'}</Button>
               <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('pro')}>Upgrade to Pro</Button>
