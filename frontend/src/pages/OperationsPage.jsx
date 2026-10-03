@@ -60,7 +60,11 @@ export function OperationsPage() {
     mutationFn: (body) => api('/api/operations/integrations', { method: 'PATCH', body }),
     onSuccess: (result) => {
       setError('');
-      setNotice(result.data?.slack ? 'Saved. Slack is connected.' : 'Saved.');
+      const connected = [
+        result.data?.slack ? 'Slack is connected' : '',
+        result.data?.github ? 'GitHub is connected' : '',
+      ].filter(Boolean);
+      setNotice(connected.length ? `Saved. ${connected.join('. ')}.` : 'Saved.');
       refresh();
     },
     onError: (err) => { setNotice(''); setError(err.message); },
