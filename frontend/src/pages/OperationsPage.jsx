@@ -74,6 +74,7 @@ export function OperationsPage() {
     onSuccess: (result) => { window.location.assign(result.data.url); },
     onError: (err) => setError(err.message),
   });
+  const openingCheckout = checkout.isPending || checkout.isSuccess;
 
   if (operations.isLoading) return <p className="text-muted">Loading operations…</p>;
   if (operations.error) return <p className="text-danger">{operations.error.message}</p>;
@@ -284,13 +285,24 @@ export function OperationsPage() {
             <input className={inputClass} name="githubToken" placeholder={data.integrations.github ? 'Token saved. Paste a new token only to replace it.' : 'GitHub token, stored for issue creation'} />
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={integrations.isPending}>{integrations.isPending ? 'Saving…' : 'Save integrations'}</Button>
-              <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('pro')}>Upgrade to Pro</Button>
-              <Button type="button" variant="ghost" disabled={checkout.isPending} onClick={() => checkout.mutate('business')}>Upgrade to Business</Button>
+              <Button type="button" variant="ghost" disabled={openingCheckout} onClick={() => checkout.mutate('pro')}>{openingCheckout && checkout.variables === 'pro' ? 'Opening…' : 'Upgrade to Pro'}</Button>
+              <Button type="button" variant="ghost" disabled={openingCheckout} onClick={() => checkout.mutate('business')}>{openingCheckout && checkout.variables === 'business' ? 'Opening…' : 'Upgrade to Business'}</Button>
               {notice ? <p className="text-sm text-signal">{notice}</p> : null}
             </div>
           </form>
         ) : null}
       </Panel>
+      {openingCheckout ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 px-6" role="status" aria-live="polite">
+          <div className="w-full max-w-sm rounded-2xl border border-line bg-panel px-8 py-7 text-center">
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-line border-t-signal" />
+            <p className="mt-4 text-lg font-semibold">Opening checkout</p>
+            <p className="mt-2 text-sm text-muted">
+              Preparing the {checkout.variables === 'business' ? 'Business' : 'Pro'} payment page. This stays up until Razorpay opens.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
