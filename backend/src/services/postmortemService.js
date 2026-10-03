@@ -1,4 +1,5 @@
 import { AppError } from '../utils/AppError.js';
+import { assertUnderLimit } from './retention.js';
 import { incidentNumber } from '../utils/presenters.js';
 import {
   Incident,
@@ -74,6 +75,7 @@ export async function createForIncident(organizationId, incidentId, actorId) {
   }
   const existing = await Postmortem.findOne({ organizationId, incidentId });
   if (existing) throw new AppError('POSTMORTEM_EXISTS', 'This incident already has a postmortem', 409);
+  await assertUnderLimit(organizationId, 'postmortems.max', await Postmortem.countDocuments({ organizationId }));
 
   const events = await IncidentEvent.find({ incidentId }).sort({ createdAt: 1 });
   const timeline = events.map((event) => `${event.createdAt.toISOString()} ${event.message}`).join('\n');

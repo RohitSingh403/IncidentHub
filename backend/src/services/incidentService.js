@@ -18,6 +18,7 @@ import { notifyIncident } from './notificationService.js';
 import { beginEscalation, stopEscalation } from './escalationService.js';
 import { fanoutIncident } from './operationsService.js';
 import { syncPublicIncident } from './statusPageService.js';
+import { makeRoomForIncident } from './retention.js';
 
 const OPEN_FILTER = { $in: OPEN_STATUSES };
 
@@ -192,6 +193,7 @@ export async function getIncident(organizationId, incidentId) {
 }
 
 export async function createManualIncident(organizationId, actorId, input) {
+  await makeRoomForIncident(organizationId);
   const service = await assertService(organizationId, input.serviceId);
   await assertTeam(organizationId, input.assignedTeamId);
   await assertAssignee(organizationId, input.assignedUserId);
@@ -340,6 +342,7 @@ export async function syncMonitorIncident(service, action, check) {
   let incident = await findOpenMonitorIncident(service.organizationId, service._id);
   if (!incident) {
     try {
+      await makeRoomForIncident(service.organizationId);
       incident = await Incident.create({
         organizationId: service.organizationId,
         serviceId: service._id,
@@ -366,6 +369,7 @@ export async function syncMonitorIncident(service, action, check) {
       await fanoutIncident(incident, service, 'opened');
       return incident;
     } catch (error) {
+      if (error.code === 'QUOTA_EXCEEDED') return null;
       if (error.code !== 11000) throw error;
       incident = await findOpenMonitorIncident(service.organizationId, service._id);
       if (!incident) throw error;

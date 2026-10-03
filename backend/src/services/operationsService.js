@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { AppError } from '../utils/AppError.js';
 import { limitFor } from '../domain/entitlements.js';
+import { assertUnderLimit, pruneOldest } from './retention.js';
 import { errorBudget, factualBrief, windowCovers, correlateIncidents, buildCorrelationGroups } from '../domain/operations.js';
 import { OPEN_STATUSES } from '../domain/incidentTransitions.js';
 import { incidentNumber } from '../utils/presenters.js';
@@ -57,6 +58,7 @@ export async function recordAudit({ organizationId, actorId, action, targetType,
     message,
   });
   publish(organizationId, { type: 'activity', action, message });
+  await pruneOldest(AuditEvent, organizationId, 'auditEvents.max', { createdAt: 1 });
   return event;
 }
 
@@ -323,6 +325,7 @@ export async function getOperations(organizationId) {
 }
 
 export async function createMaintenance(organizationId, actorId, input) {
+  await assertUnderLimit(organizationId, 'maintenance.max', await MaintenanceWindow.countDocuments({ organizationId }));
   await serviceInOrg(organizationId, input.serviceId);
   if (new Date(input.endsAt) <= new Date(input.startsAt)) {
     throw new AppError('INVALID_WINDOW', 'Maintenance must end after it starts', 422);
@@ -627,7 +630,8 @@ export async function incidentBrief(organizationId, incidentId) {
   const events = await IncidentEvent.find({ incidentId: incident._id }).sort({ createdAt: 1 });
   const brief = factualBrief(incident, events);
   const env = getEnv();
-  if (!env.aiApiKey) return brief;
+  const organization = await Organization.findById(organizationId).select('plan');
+  if (!env.aiApiKey || organization?.plan === 'free') return brief;
   try {
     const response = await fetch(`${env.aiBaseUrl}/chat/completions`, {
       method: 'POST',

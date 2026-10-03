@@ -52,6 +52,8 @@ describe('operations', () => {
       organizationName: `Other ${unique}`,
     });
     const token = session.body.data.token;
+    const { Organization } = await import('../src/models/index.js');
+    await Organization.updateOne({ _id: session.body.data.user.organization.id }, { plan: 'pro' });
 
     const service = await request(app)
       .post('/api/services')
@@ -102,6 +104,7 @@ describe('operations', () => {
     const viaKey = await request(app).get('/api/operations').set(authHeader(key.body.data.key));
     expect(viaKey.status).toBe(200);
 
+    await Organization.updateOne({ _id: session.body.data.user.organization.id }, { plan: 'free' });
     const second = await request(app).post('/api/operations/api-keys').set(authHeader(token)).send({ name: 'Extra' });
     expect(second.status).toBe(403);
     expect(second.body.error.code).toBe('QUOTA_EXCEEDED');

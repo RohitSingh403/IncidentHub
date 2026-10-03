@@ -1,5 +1,6 @@
 import { AppError } from '../utils/AppError.js';
 import { limitFor } from '../domain/entitlements.js';
+import { planOf } from './retention.js';
 import { percentile, uptimePercent } from '../domain/metrics.js';
 import { presentCheck, presentIncident, presentService } from '../utils/presenters.js';
 import { allowedTransitions } from '../domain/incidentTransitions.js';
@@ -149,13 +150,14 @@ export async function deleteService(organizationId, serviceId) {
 
 export async function updateMonitor(organizationId, serviceId, input) {
   await serviceInOrg(organizationId, serviceId);
+  const minInterval = limitFor(await planOf(organizationId), 'checkInterval.min');
   const monitor = await Monitor.findOneAndUpdate(
     { organizationId, serviceId },
     {
       $set: {
         url: input.url,
         method: input.method,
-        intervalSeconds: input.intervalSeconds,
+        intervalSeconds: Math.max(minInterval, input.intervalSeconds),
         timeoutMs: input.timeoutMs,
         expectedStatus: input.expectedStatus,
         expectedJsonPath: input.expectedJsonPath || '',

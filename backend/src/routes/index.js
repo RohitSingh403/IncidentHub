@@ -12,17 +12,20 @@ import { escalationRouter } from './escalationRoutes.js';
 import { mountIncidentPostmortems, postmortemRouter } from './postmortemRoutes.js';
 import { publicStatusRouter, statusPageRouter } from './statusRoutes.js';
 import { auditRouter, operationsRouter } from './operationsRoutes.js';
+import { publicRateLimit, writeRateLimit } from '../middleware/rateLimit.js';
 
 mountIncidentPostmortems(incidentRouter);
 
 export const apiRouter = Router();
 
+apiRouter.use(publicRateLimit);
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/demo', demoRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/public/status', publicStatusRouter);
 
 apiRouter.use(authMiddleware);
+apiRouter.use(writeRateLimit);
 apiRouter.use('/organization', organizationRouter);
 apiRouter.use('/members', memberRouter);
 apiRouter.use('/teams', teamRouter);

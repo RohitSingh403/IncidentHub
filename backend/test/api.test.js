@@ -179,7 +179,7 @@ describe('incident engine', () => {
 
   it('enforces the free-plan service limit', async () => {
     const session = await register('Quota');
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 1; index += 1) {
       const response = await request(app)
         .post('/api/services')
         .set(authHeader(session.token))

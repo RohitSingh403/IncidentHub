@@ -1,4 +1,5 @@
 import { AppError } from '../utils/AppError.js';
+import { assertUnderLimit } from './retention.js';
 import { resolveOnCall } from '../domain/onCall.js';
 import { Membership, OnCallSchedule, ScheduleOverride, Team, User } from '../models/index.js';
 
@@ -79,6 +80,7 @@ export async function listSchedules(organizationId) {
 }
 
 export async function createSchedule(organizationId, input) {
+  await assertUnderLimit(organizationId, 'onCallSchedules.max', await OnCallSchedule.countDocuments({ organizationId }));
   await assertTeam(organizationId, input.teamId);
   await assertMembers(organizationId, input.memberIds);
   const existing = await OnCallSchedule.findOne({ organizationId, teamId: input.teamId });

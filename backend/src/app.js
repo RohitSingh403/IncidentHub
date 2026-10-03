@@ -13,6 +13,7 @@ export function createApp() {
   const app = express();
   const env = getEnv();
 
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(helmet({
     contentSecurityPolicy: env.nodeEnv === 'production' ? {

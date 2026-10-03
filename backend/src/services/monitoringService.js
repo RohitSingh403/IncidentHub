@@ -5,6 +5,7 @@ import { classifyResponse } from '../domain/classifyResponse.js';
 import { HealthCheck, Monitor, Service } from '../models/index.js';
 import { resolveMonitorIncident, syncMonitorIncident } from './incidentService.js';
 import { maintenanceCovers } from './operationsService.js';
+import { pruneOldest } from './retention.js';
 
 export async function executeHttpCheck(monitor) {
   const started = Date.now();
@@ -72,6 +73,7 @@ export async function ingestCheck(monitorId, check) {
     error: check.error,
     checkedAt: new Date(),
   });
+  await pruneOldest(HealthCheck, monitor.organizationId, 'healthChecks.max', { checkedAt: 1 });
 
   await Monitor.updateOne(
     { _id: monitor._id },

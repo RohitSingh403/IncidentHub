@@ -1,4 +1,5 @@
 import { AppError } from '../utils/AppError.js';
+import { assertUnderLimit } from './retention.js';
 import { escalationDecision } from '../domain/escalation.js';
 import { incidentNumber } from '../utils/presenters.js';
 import { notifyIncident, notifyUsers } from './notificationService.js';
@@ -199,6 +200,7 @@ export async function listPolicies(organizationId) {
 }
 
 export async function createPolicy(organizationId, input) {
+  await assertUnderLimit(organizationId, 'escalationPolicies.max', await EscalationPolicy.countDocuments({ organizationId }));
   for (const step of input.steps) {
     if (step.target === 'user' && !step.userId) {
       throw new AppError('VALIDATION_ERROR', 'A user escalation step needs a user', 422);

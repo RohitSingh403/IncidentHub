@@ -172,8 +172,8 @@ export function LandingPage() {
 
         <section className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-10 md:flex-row md:items-center md:px-10">
           <div>
-            <h2 className="text-2xl font-semibold">Start with the free plan.</h2>
-            <p className="mt-2 text-muted">3 services, 1 team, 3 members, 1 status page. Upgrade when the limits get tight.</p>
+            <h2 className="text-2xl font-semibold">Start with a small free workspace.</h2>
+            <p className="mt-2 text-muted">One service, five incidents, and a taste of each feature. Pro keeps the full history.</p>
           </div>
           <Link to="/register" className="rounded-md bg-signal px-4 py-2.5 font-semibold text-bg">
             Create an organization
@@ -196,9 +196,52 @@ export function LandingPage() {
 
 export function PricingPage() {
   const plans = [
-    ['Free', 'Available now', ['3 services', '1 team', '3 members', '1 API key', '1 webhook']],
-    ['Pro', 'Checkout when Stripe is configured', ['25 services', '10 teams', '50 members', '10 API keys', '10 webhooks']],
-    ['Business', 'Checkout when Stripe is configured', ['100 services', '25 teams', '200 members', '25 API keys', '25 webhooks']],
+    {
+      name: 'Free',
+      price: '₹0',
+      note: 'Try each part of the product',
+      items: [
+        '1 service, checked every 60 seconds',
+        '1 team and 3 members',
+        '5 incidents kept',
+        '1 status page and 1 postmortem',
+        '1 escalation policy and 1 on-call schedule',
+        '1 API key and 1 webhook',
+        '100 health checks and 25 audit events stored',
+        'Incident brief from the timeline',
+      ],
+      action: { to: '/register', label: 'Start free' },
+    },
+    {
+      name: 'Pro',
+      price: '₹499',
+      note: 'After payment in Operations',
+      items: [
+        '25 services, checks from every 15 seconds',
+        '10 teams and 50 members',
+        '500 incidents kept',
+        '5 status pages and 100 postmortems',
+        'Model-written incident briefs',
+        '10 API keys and 10 webhooks',
+        '20,000 health checks and 2,000 audit events stored',
+        'Slack and GitHub on the full workspace',
+      ],
+      action: { to: '/register', label: 'Create account, then upgrade' },
+    },
+    {
+      name: 'Business',
+      price: '₹1,499',
+      note: 'After payment in Operations',
+      items: [
+        '100 services',
+        '25 teams and 200 members',
+        '5,000 incidents kept',
+        '20 status pages',
+        '25 API keys and 25 webhooks',
+        '100,000 health checks stored',
+      ],
+      action: { to: '/register', label: 'Create account, then upgrade' },
+    },
   ];
   return (
     <div>
@@ -206,18 +249,23 @@ export function PricingPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="text-4xl font-semibold">Pricing</h1>
         <p className="mt-3 max-w-2xl text-muted">
-          Free limits apply today. Pro and Business limits apply after the matching Stripe price is connected on the server.
+          Free is a small workspace so a new account can see every feature without filling the database.
+          Pro and Business keep the history, the faster checks, and the model-written brief after payment.
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {plans.map(([name, note, items]) => (
-            <article key={name} className="rounded-xl border border-line bg-panel p-5">
-              <h2 className="text-xl font-semibold">{name}</h2>
-              <p className="mt-1 font-mono text-xs text-signal">{note}</p>
-              <ul className="mt-4 space-y-2 text-sm text-muted">
-                {items.map((item) => (
+          {plans.map((plan) => (
+            <article key={plan.name} className="flex flex-col rounded-xl border border-line bg-panel p-5">
+              <h2 className="text-xl font-semibold">{plan.name}</h2>
+              <p className="mt-2 font-mono text-2xl">{plan.price}</p>
+              <p className="mt-1 font-mono text-xs text-signal">{plan.note}</p>
+              <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
+                {plan.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+              <Link to={plan.action.to} className="mt-6 inline-flex justify-center rounded-md bg-signal px-3 py-2 text-sm font-semibold text-bg">
+                {plan.action.label}
+              </Link>
             </article>
           ))}
         </div>
