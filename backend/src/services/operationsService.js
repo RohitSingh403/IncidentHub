@@ -315,7 +315,7 @@ export async function getOperations(organizationId) {
       slack: Boolean(organization?.slackWebhookUrl),
       github: Boolean(organization?.githubRepo && organization?.githubToken),
       githubRepo: organization?.githubRepo || '',
-      billing: env.stripeSecretKey && env.stripePricePro ? 'configured' : 'not_configured',
+      billing: (env.razorpayKeyId && env.razorpayKeySecret) || (env.stripeSecretKey && env.stripePricePro) ? 'configured' : 'not_configured',
       ai: env.aiApiKey ? 'configured' : 'not_configured',
       plan: organization?.plan || 'free',
     },
@@ -533,6 +533,9 @@ export async function saveIntegrations(organizationId, actorId, input) {
 export async function startCheckout(organizationId, plan = 'pro') {
   const env = getEnv();
   const selected = plan === 'business' ? 'business' : 'pro';
+  if (env.razorpayKeyId && env.razorpayKeySecret) {
+    return startRazorpayCheckout(organizationId, selected, env);
+  }
   const price = selected === 'business' ? env.stripePriceBusiness : env.stripePricePro;
   if (!env.stripeSecretKey || !price) {
     throw new AppError('BILLING_UNAVAILABLE', 'Billing is not connected on this server', 503);
@@ -547,6 +550,54 @@ export async function startCheckout(organizationId, plan = 'pro') {
     metadata: { organizationId: String(organizationId), plan: selected },
   });
   return { url: session.url };
+}
+
+async function startRazorpayCheckout(organizationId, plan, env) {
+  const amount = plan === 'business' ? env.razorpayAmountBusiness : env.razorpayAmountPro;
+  const auth = Buffer.from(`${env.razorpayKeyId}:${env.razorpayKeySecret}`).toString('base64');
+  const response = await fetch('https://api.razorpay.com/v1/payment_links', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      amount,
+      currency: 'INR',
+      description: `IncidentHub ${plan === 'business' ? 'Business' : 'Pro'}`,
+      notes: { organizationId: String(organizationId), plan },
+      callback_url: `${env.clientOrigin}/operations?billing=success`,
+      callback_method: 'get',
+    }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.short_url) {
+    throw new AppError('BILLING_UNAVAILABLE', 'Razorpay could not open checkout', 503);
+  }
+  return { url: payload.short_url };
+}
+
+export async function applyRazorpayEvent(rawBody, signature) {
+  const env = getEnv();
+  if (!env.razorpayKeySecret || !env.razorpayWebhookSecret) {
+    throw new AppError('BILLING_UNAVAILABLE', 'Razorpay webhook is not connected', 503);
+  }
+  const body = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || '');
+  const expected = crypto.createHmac('sha256', env.razorpayWebhookSecret).update(body).digest('hex');
+  const received = Buffer.from(String(signature || ''));
+  const computed = Buffer.from(expected);
+  if (received.length !== computed.length || !crypto.timingSafeEqual(received, computed)) {
+    throw new AppError('INVALID_SIGNATURE', 'Razorpay signature is invalid', 400);
+  }
+  const event = JSON.parse(body.toString('utf8'));
+  if (event.event !== 'payment_link.paid') return { received: true };
+  const link = event.payload?.payment_link?.entity;
+  const organizationId = link?.notes?.organizationId;
+  const plan = link?.notes?.plan === 'business' ? 'business' : 'pro';
+  if (organizationId && link?.status === 'paid') {
+    await Organization.updateOne({ _id: organizationId }, { $set: { plan } });
+  }
+  return { received: true };
 }
 
 export async function applyBillingEvent(rawBody, signature) {

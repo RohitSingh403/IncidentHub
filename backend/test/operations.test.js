@@ -10,6 +10,8 @@ beforeAll(async () => {
   process.env.CLIENT_ORIGIN = 'http://localhost:5173';
   delete process.env.SMTP_URL;
   delete process.env.STRIPE_SECRET_KEY;
+  delete process.env.RAZORPAY_KEY_ID;
+  delete process.env.RAZORPAY_KEY_SECRET;
   delete process.env.AI_API_KEY;
 
   const { MongoMemoryServer } = await import('mongodb-memory-server');

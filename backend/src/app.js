@@ -7,7 +7,7 @@ import { getEnv } from './config/env.js';
 import { requestContext } from './middleware/requestContext.js';
 import { errorMiddleware, notFound } from './middleware/errorMiddleware.js';
 import { apiRouter } from './routes/index.js';
-import { applyBillingEvent } from './services/operationsService.js';
+import { applyBillingEvent, applyRazorpayEvent } from './services/operationsService.js';
 
 export function createApp() {
   const app = express();
@@ -27,6 +27,14 @@ export function createApp() {
     } : false,
   }));
   app.use(cors({ origin: env.clientOrigin }));
+  app.post('/api/billing/razorpay/webhook', express.raw({ type: 'application/json' }), async (req, res, next) => {
+    try {
+      const result = await applyRazorpayEvent(req.body, req.headers['x-razorpay-signature']);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  });
   app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), async (req, res, next) => {
     try {
       const result = await applyBillingEvent(req.body, req.headers['stripe-signature']);

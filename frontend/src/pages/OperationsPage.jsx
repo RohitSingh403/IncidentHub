@@ -85,7 +85,7 @@ export function OperationsPage() {
       <div>
         <h1 className="text-3xl font-semibold">Operations</h1>
         <p className="mt-1 text-sm text-muted">
-          Plan {data.integrations.plan}. Email {data.integrations.email.replace('_', ' ')}. Slack {data.integrations.slack ? 'connected' : 'not connected'}. GitHub {data.integrations.github ? 'connected' : 'not connected'}. Model summary {data.integrations.ai.replace('_', ' ')}.
+          Plan {data.integrations.plan}. Email {data.integrations.email.replace('_', ' ')}. Slack {data.integrations.slack ? 'connected' : 'not connected'}. GitHub {data.integrations.github ? 'connected' : 'not connected'}. Model summary {data.integrations.ai.replace('_', ' ')}. Billing {data.integrations.billing.replace('_', ' ')}.
         </p>
       </div>
       <Banner>{error}</Banner>
