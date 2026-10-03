@@ -523,7 +523,11 @@ export async function saveIntegrations(organizationId, actorId, input) {
     targetId: organization._id,
     message: 'Integration settings saved',
   });
-  return { slack: Boolean(organization.slackWebhookUrl), githubRepo: organization.githubRepo };
+  return {
+    slack: Boolean(organization.slackWebhookUrl),
+    github: Boolean(organization.githubRepo && organization.githubToken),
+    githubRepo: organization.githubRepo,
+  };
 }
 
 export async function startCheckout(organizationId, plan = 'pro') {
